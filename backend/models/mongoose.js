@@ -1,3 +1,6 @@
-const mongoose = require("moongoose");
+const mongoose = require('mongoose');
 
-mongoose.connect()
+mongoose.connect('mongodb://127.0.0.1:27017/Nearkart')
+    .then(() => console.log('MongoDB Connected!'))
+    .catch((err) => console.log(err));
+

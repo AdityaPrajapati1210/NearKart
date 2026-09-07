@@ -5,12 +5,13 @@
   "license": "ISC",
   "author": "adiyta prajapati",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "express": "^5.2.1",
+    "express-router": "^0.0.1",
     "moongoose": "^0.0.5"
   }
 }

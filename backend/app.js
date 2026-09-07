@@ -1,5 +1,12 @@
-const app = require("express");
-app = express();
+const express = require("express");
+const app = express();
+const userRoute = require('./routes/userRoute');
+require('./models/mongoose');
+
+app.use(express.json());
+
+
+app.use("/api/users", userRoute);
 
 app.get("/",(req,res)=>{
     res.send("working");

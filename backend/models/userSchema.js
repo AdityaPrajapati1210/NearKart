@@ -1,5 +1,5 @@
 
-const mongoose = require('moongoose');
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -17,10 +17,11 @@ const userSchema = new mongoose.Schema({
         lowercase: true
     },
     phone: {
-        type: Number,
+        type: String,
         required: true,
-        length: 10,
-        trim: true
+        trim: true,
+        minlength: 10,
+        maxlength: 10
     },
     password: {
         type: String,
@@ -35,7 +36,7 @@ const userSchema = new mongoose.Schema({
         {
             product: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "Product",
+                // ref: "Product",
             },
 
             quantity: {
@@ -100,5 +101,4 @@ const userSchema = new mongoose.Schema({
     }
 );
 
-
-export default mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);

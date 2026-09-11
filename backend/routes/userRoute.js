@@ -7,6 +7,8 @@ const ExpressError = require('../utils/ExpressError');
 const validateLoginUser = require('../middleware/validateLoginUser');
 const isLoggedIn = require('../middleware/isLoggedIn');
 const validataUserupdate = require('../middleware/validateUserUpdate');
+const wrapAsync = require("../utils/Wrapasync");
+const validateAddress = require('../middleware/validateAddress');
 
 
 const router = express.Router();
@@ -73,13 +75,26 @@ router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {        
 
     req.session.userId = user._id;
 
-    console.log("SESSION:", req.session);
-    console.log("SESSION ID:", req.sessionID);
+    // console.log("SESSION:", req.session);
+    // console.log("SESSION ID:", req.sessionID);
 
     res.status(200).json({
         message: "Login successful"
     });
 }));
+
+router.post('/logout', isLoggedIn, (req, res, next) => {                  //logout route..
+    req.session.destroy((err) => {
+        if (err) {
+            return next(err);
+        }
+        res.clearCookie('connect.sid');
+        res.status(200).json({
+            success: true,
+            message: "Logout successful"
+        });
+    });
+});
 
 router.get("/profile", isLoggedIn, Wrapasync(async (req, res) => {      //get profile ...
 
@@ -113,3 +128,108 @@ router.patch('/profile', isLoggedIn, validataUserupdate, Wrapasync(async (req, r
         user
     })
 }));
+
+router.get('/addresses', isLoggedIn, wrapAsync(async (req, res) => {     //get the addresses of the user
+    const user = await User.findById(req.session.userId)
+        .select("addresses");
+    if (!user) {
+        throw new ExpressError(404, "User not found");
+    }
+    if (user.addresses.length === 0) {
+        return res.status(200).json({
+            success: true,
+            message: "No addresses found",
+            addresses: []
+        });
+    }
+    res.status(200).json({
+        success: true,
+        message: "Addresses found",
+        addresses: user.addresses
+    });
+}));
+
+router.post('/addresses', isLoggedIn, validateAddress, wrapAsync(async (req, res) => {    //add new addresses
+    const { label, address, latitude, longitude } = req.body;
+
+    const user = await User.findById(req.session.userId).select("addresses");
+
+    if (!user) {
+        throw new ExpressError(404, "User not found");
+    }
+
+    user.addresses.push({
+        label,
+        address,
+        latitude,
+        longitude
+    })
+
+    await user.save();
+
+    res.status(201).json({
+        success: true,
+        message: "Address added successfully",
+        address: user.addresses[user.addresses.length - 1]
+    });
+}))
+
+router.patch('/addresses/:addressId', isLoggedIn, validateAddress, wrapAsync(async (req, res) => {
+
+        const user = await User.findById(req.session.userId)
+            .select("addresses");
+
+        if (!user) {
+            throw new ExpressError(404, "User not found");
+        }
+
+        const address = user.addresses.id(req.params.addressId);
+
+        if (!address) {
+            throw new ExpressError(404, "Address not found");
+        }
+
+        const { label, address: addressText, latitude, longitude } = req.body;
+
+        address.label = label;
+        address.address = addressText;
+        address.latitude = latitude;
+        address.longitude = longitude;
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Address updated successfully",
+            address
+        });
+    })
+);
+
+router.delete('/addresses/:addressId',
+    isLoggedIn,
+    wrapAsync(async (req, res) => {
+
+        const user = await User.findById(req.session.userId)
+            .select("addresses");
+
+        if (!user) {
+            throw new ExpressError(404, "User not found");
+        }
+
+        const address = user.addresses.id(req.params.addressId);
+
+        if (!address) {
+            throw new ExpressError(404, "Address not found");
+        }
+
+        address.deleteOne();
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Address deleted successfully"
+        });
+    })
+);

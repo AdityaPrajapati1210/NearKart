@@ -67,12 +67,7 @@ const userSchema = new mongoose.Schema({
 
             longitude: {
                 type: Number,
-            },
-
-            isDefault: {
-                type: Boolean,
-                default: false,
-            },
+            }
         },
     ],
     location: {

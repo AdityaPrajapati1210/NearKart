@@ -1,14 +1,15 @@
 const express = require("express");
 const User = require('../models/userSchema');
 const bcrypt = require('bcrypt');
-const validateUser = require('../middleware/validateUser');
 const Wrapasync = require('../utils/Wrapasync');
 const ExpressError = require('../utils/ExpressError');
-const validateLoginUser = require('../middleware/validateLoginUser');
 const isLoggedIn = require('../middleware/isLoggedIn');
-const validataUserupdate = require('../middleware/validateUserUpdate');
 const wrapAsync = require("../utils/Wrapasync");
+const validateUser = require('../middleware/validateUser');
+const validateLoginUser = require('../middleware/validateLoginUser');
+const validataUserupdate = require('../middleware/validateUserUpdate');
 const validateAddress = require('../middleware/validateAddress');
+const validateLocation = require('../middleware/validateLocation')
 
 
 const router = express.Router();
@@ -129,6 +130,9 @@ router.patch('/profile', isLoggedIn, validataUserupdate, Wrapasync(async (req, r
     })
 }));
 
+
+// address route start--------------------------
+
 router.get('/addresses', isLoggedIn, wrapAsync(async (req, res) => {     //get the addresses of the user
     const user = await User.findById(req.session.userId)
         .select("addresses");
@@ -206,9 +210,7 @@ router.patch('/addresses/:addressId', isLoggedIn, validateAddress, wrapAsync(asy
     })
 );
 
-router.delete('/addresses/:addressId',
-    isLoggedIn,
-    wrapAsync(async (req, res) => {
+router.delete('/addresses/:addressId', isLoggedIn, wrapAsync(async (req, res) => {
 
         const user = await User.findById(req.session.userId)
             .select("addresses");
@@ -233,3 +235,54 @@ router.delete('/addresses/:addressId',
         });
     })
 );
+
+// address route end------------------------------
+
+// location route start ------------------------
+router.patch("/location", isLoggedIn, validateLocation, wrapAsync(async (req, res) => {
+
+    const { latitude, longitude } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+        req.session.userId,
+        {
+            location: {
+                latitude,
+                longitude,
+                updatedAt: new Date()
+            }
+        },
+        { new: true }
+    );
+
+    if (!user) {
+        throw new ExpressError(404, "User not found");
+    }
+
+    res.status(200).json({
+        message: "Location saved successfully"
+    });
+}));
+
+router.get('/location',isLoggedIn, wrapAsync(async(req,res)=>{
+    const user = await User.findById(req.session.userId);
+
+    if(!user){
+        throw new ExpressError(404,"User not found");
+    }
+    if(!user.location){
+        return res.status(200).json({
+            success:true,
+            message:"Empty location",
+            location:{}
+        })
+    }
+
+    res.status(200).json({
+        success:true,
+        message:"successfully found Location",
+        location:user.location
+    })
+}))
+
+// location route snd----------------------

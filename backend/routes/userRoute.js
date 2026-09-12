@@ -3,14 +3,8 @@ const User = require('../models/userSchema');
 const bcrypt = require('bcrypt');
 const Wrapasync = require('../utils/Wrapasync');
 const ExpressError = require('../utils/ExpressError');
-const isLoggedIn = require('../middleware/isLoggedIn');
-const wrapAsync = require("../utils/Wrapasync");
-const validateUser = require('../middleware/validateUser');
-const validateLoginUser = require('../middleware/validateLoginUser');
-const validataUserupdate = require('../middleware/validateUserUpdate');
-const validateAddress = require('../middleware/validateAddress');
-const validateLocation = require('../middleware/validateLocation')
-
+const { isLoggedIn } = require('../middleware/auth');
+const { validateUser, validateLoginUser, validateUserUpdate, validateAddress, validateLocation } = require('../middleware/validateSchema');
 
 const router = express.Router();
 
@@ -78,9 +72,47 @@ router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {        
 
     // console.log("SESSION:", req.session);
     // console.log("SESSION ID:", req.sessionID);
+    const data = {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+    };
 
     res.status(200).json({
-        message: "Login successful"
+        success: true,
+        message: "Login successful",
+        user: data
+    });
+}));
+
+router.post("/login/shop", validateLoginUser, Wrapasync(async (req, res) => {         //login shop...
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        throw new ExpressError(401, "Invalid email or password");
+    }
+
+    user.role = "shopkeeper";
+    user.save();
+
+    req.session.userId = user._id;
+
+    // console.log("SESSION:", req.session);
+    // console.log("SESSION ID:", req.sessionID);
+    const data = {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+    };
+
+    res.status(200).json({
+        success: true,
+        message: "Login successful",
+        user:data
     });
 }));
 
@@ -114,7 +146,7 @@ router.get("/profile", isLoggedIn, Wrapasync(async (req, res) => {      //get pr
 })
 );
 
-router.patch('/profile', isLoggedIn, validataUserupdate, Wrapasync(async (req, res) => {
+router.patch('/profile', isLoggedIn, validateUserUpdate, Wrapasync(async (req, res) => {
     const { name, email, phone } = req.body;
 
     const user = await User.findByIdAndUpdate(req.session.userId, { name, email, phone }, { new: true, runValidators: true }).select("-password");
@@ -133,7 +165,7 @@ router.patch('/profile', isLoggedIn, validataUserupdate, Wrapasync(async (req, r
 
 // address route start--------------------------
 
-router.get('/addresses', isLoggedIn, wrapAsync(async (req, res) => {     //get the addresses of the user
+router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get the addresses of the user
     const user = await User.findById(req.session.userId)
         .select("addresses");
     if (!user) {
@@ -153,7 +185,7 @@ router.get('/addresses', isLoggedIn, wrapAsync(async (req, res) => {     //get t
     });
 }));
 
-router.post('/addresses', isLoggedIn, validateAddress, wrapAsync(async (req, res) => {    //add new addresses
+router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {    //add new addresses
     const { label, address, latitude, longitude } = req.body;
 
     const user = await User.findById(req.session.userId).select("addresses");
@@ -178,68 +210,68 @@ router.post('/addresses', isLoggedIn, validateAddress, wrapAsync(async (req, res
     });
 }))
 
-router.patch('/addresses/:addressId', isLoggedIn, validateAddress, wrapAsync(async (req, res) => {
+router.patch('/addresses/:addressId', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {
 
-        const user = await User.findById(req.session.userId)
-            .select("addresses");
+    const user = await User.findById(req.session.userId)
+        .select("addresses");
 
-        if (!user) {
-            throw new ExpressError(404, "User not found");
-        }
+    if (!user) {
+        throw new ExpressError(404, "User not found");
+    }
 
-        const address = user.addresses.id(req.params.addressId);
+    const address = user.addresses.id(req.params.addressId);
 
-        if (!address) {
-            throw new ExpressError(404, "Address not found");
-        }
+    if (!address) {
+        throw new ExpressError(404, "Address not found");
+    }
 
-        const { label, address: addressText, latitude, longitude } = req.body;
+    const { label, address: addressText, latitude, longitude } = req.body;
 
-        address.label = label;
-        address.address = addressText;
-        address.latitude = latitude;
-        address.longitude = longitude;
+    address.label = label;
+    address.address = addressText;
+    address.latitude = latitude;
+    address.longitude = longitude;
 
-        await user.save();
+    await user.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Address updated successfully",
-            address
-        });
-    })
+    res.status(200).json({
+        success: true,
+        message: "Address updated successfully",
+        address
+    });
+})
 );
 
-router.delete('/addresses/:addressId', isLoggedIn, wrapAsync(async (req, res) => {
+router.delete('/addresses/:addressId', isLoggedIn, Wrapasync(async (req, res) => {
 
-        const user = await User.findById(req.session.userId)
-            .select("addresses");
+    const user = await User.findById(req.session.userId)
+        .select("addresses");
 
-        if (!user) {
-            throw new ExpressError(404, "User not found");
-        }
+    if (!user) {
+        throw new ExpressError(404, "User not found");
+    }
 
-        const address = user.addresses.id(req.params.addressId);
+    const address = user.addresses.id(req.params.addressId);
 
-        if (!address) {
-            throw new ExpressError(404, "Address not found");
-        }
+    if (!address) {
+        throw new ExpressError(404, "Address not found");
+    }
 
-        address.deleteOne();
+    address.deleteOne();
 
-        await user.save();
+    await user.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Address deleted successfully"
-        });
-    })
+    res.status(200).json({
+        success: true,
+        message: "Address deleted successfully"
+    });
+})
 );
 
 // address route end------------------------------
 
-// location route start ------------------------
-router.patch("/location", isLoggedIn, validateLocation, wrapAsync(async (req, res) => {
+// location route start --------------------------
+router.patch("/location", isLoggedIn, validateLocation, Wrapasync(async (req, res) => {
 
     const { latitude, longitude } = req.body;
 
@@ -264,25 +296,26 @@ router.patch("/location", isLoggedIn, validateLocation, wrapAsync(async (req, re
     });
 }));
 
-router.get('/location',isLoggedIn, wrapAsync(async(req,res)=>{
+router.get('/location', isLoggedIn, Wrapasync(async (req, res) => {
     const user = await User.findById(req.session.userId);
 
-    if(!user){
-        throw new ExpressError(404,"User not found");
+    if (!user) {
+        throw new ExpressError(404, "User not found");
     }
-    if(!user.location){
+    if (!user.location) {
         return res.status(200).json({
-            success:true,
-            message:"Empty location",
-            location:{}
+            success: true,
+            message: "Empty location",
+            location: {}
         })
     }
 
     res.status(200).json({
-        success:true,
-        message:"successfully found Location",
-        location:user.location
+        success: true,
+        message: "successfully found Location",
+        location: user.location
     })
 }))
 
-// location route snd----------------------
+// location route snd------------------------------
+

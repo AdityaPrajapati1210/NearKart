@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const userRoute = require('./routes/userRoute');
+const productRoute = require('./routes/productRoute');
 const session = require('express-session');
 require('./models/mongoose');
 
@@ -18,6 +19,8 @@ app.use(session({                                          //sesssion middleware
 }));
 
 app.use("/api/users", userRoute);           //user route.......transfer
+app.use("/api/products", productRoute);           //product route.......transfer
+
 
 app.get("/",(req,res)=>{
     res.send("working");

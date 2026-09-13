@@ -7,43 +7,50 @@ const ExpressError = require("../utils/ExpressError");
 const wrapAsync = require("../utils/Wrapasync");
 const { isLoggedIn, isShopkeeper } = require("../middleware/auth");
 const { validateProduct } = require('../middleware/validateSchema');
+const uploadToCloudinary = require("../utils/uploadToCloudinary");
+const upload = require("../middleware/multer");
+const cloudinary = require('cloudinary');
 
 
 
-router.post("/", isLoggedIn, isShopkeeper, validateProduct, wrapAsync(async (req, res) => {
-    const {
-        name,
-        description,
-        price,
-        category,
-        image,
-        stock
-    } = req.body;
+router.post("/", isLoggedIn, isShopkeeper, upload.single("image"), validateProduct, wrapAsync(async (req, res) => {
+        const {
+            name,
+            description,
+            price,
+            category,
+            stock
+        } = req.body;
 
-    let { offerPrice } = req.body;
+        let { offerPrice } = req.body;
 
-    if (offerPrice == undefined) {
-        offerPrice = price;
-    }
+        if (offerPrice === undefined) {
+            offerPrice = price;
+        }
 
-    const product = new Product({
-        name,
-        description,
-        price,
-        offerPrice,
-        category,
-        image,
-        stock
-    });
+        const result = await uploadToCloudinary(req.file.buffer);
 
-    await product.save();
+        const product = new Product({
+            name,
+            description,
+            price,
+            offerPrice,
+            category,
+            image: {
+                url: result.secure_url,
+                publicId: result.public_id
+            },
+            stock
+        });
 
-    res.status(201).json({
-        success: true,
-        message: "Product added successfully",
-        product
-    });
-})
+        await product.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Product added successfully",
+            product
+        });
+    })
 );
 
 router.get("/", isLoggedIn, wrapAsync(async (req, res) => {       //get prduct   ?page=1&&limit=10
@@ -56,18 +63,14 @@ router.get("/", isLoggedIn, wrapAsync(async (req, res) => {       //get prduct  
 
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({
-        isAvailable: true
-    })
+    const products = await Product.find()
         .sort({ createdAt: -1 })
         .select("name description price offerPrice category image stock")
         .skip(skip)
         .limit(limit)
         .lean();
 
-    const totalProducts = await Product.countDocuments({
-        isAvailable: true
-    });
+    const totalProducts = await Product.countDocuments();
 
     const hasMore = skip + products.length < totalProducts;
 
@@ -97,41 +100,60 @@ router.get("/:productId", isLoggedIn, wrapAsync(async (req, res) => {       //ge
 })
 );
 
-router.patch('/:productId', isLoggedIn, isShopkeeper, validateProduct, wrapAsync(async (req, res) => {   //product update
-    const {
-        name,
-        description,
-        price,
-        category,
-        image,
-        stock
-    } = req.body;
+router.patch("/:productId",isLoggedIn,isShopkeeper,upload.single("image"),validateProduct,wrapAsync(async (req, res) => {
 
-    let { offerPrice } = req.body;
+        const product = await Product.findById(req.params.productId);
 
-    if (offerPrice == undefined) {
-        offerPrice = price;
-    }
-    const Updatedproduct = await Product.findByIdAndUpdate(req.params.productId, {
-        name,
-        description,
-        price,
-        offerPrice,
-        category,
-        image,
-        stock
-    },{new:true});
+        if (!product) {
+            throw new ExpressError(404, "Product not found");
+        }
 
-    if(!Updatedproduct){
-        throw new ExpressError(404,"Product Not found");
-    }
+        const {
+            name,
+            description,
+            price,
+            category,
+            stock
+        } = req.body;
 
-    res.status(201).json({
-        success: true,
-        message: "Product updated successfully",
-        Updatedproduct
-    });
-}))
+        let { offerPrice } = req.body;
+
+        if (offerPrice === undefined) {
+            offerPrice = price;
+        }
+
+        if (req.file) {
+
+
+            const result = await uploadToCloudinary(req.file.buffer);
+
+            if (product.image?.publicId) {
+                await cloudinary.uploader.destroy(
+                    product.image.publicId
+                );
+            }
+
+            product.image = {
+                url: result.secure_url,
+                publicId: result.public_id
+            };
+        }
+        product.name = name;
+        product.description = description;
+        product.price = price;
+        product.offerPrice = offerPrice;
+        product.category = category;
+        product.stock = stock;
+
+        await product.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Product updated successfully",
+            product
+        });
+    })
+);
 
 router.delete('/:productId', isLoggedIn, isShopkeeper, wrapAsync(async (req, res) => {         //delete product
 

@@ -11,12 +11,15 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-router": "^0.0.1",
     "express-session": "^1.19.0",
     "joi": "^18.2.8",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.5",
-    "moongoose": "^0.0.5"
+    "moongoose": "^0.0.5",
+    "multer": "^2.3.0"
   }
 }

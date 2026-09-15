@@ -1,28 +1,18 @@
-const express = require("express");
-const User = require('../models/userSchema');
-const bcrypt = require('bcrypt');
-const Wrapasync = require('../utils/Wrapasync');
-const ExpressError = require('../utils/ExpressError');
-const { isLoggedIn } = require('../middleware/auth');
-const { validateUser, validateLoginUser, validateUserUpdate, validateAddress, validateLocation } = require('../middleware/validateSchema');
-const addToCart = require('../controller/cartController/addToCart');
-const getCart = require('../controller/cartController/getCart');
-const clearCart = require('../controller/cartController/clearCart');
-const removeFromCart = require('../controller/cartController/removeFromCart');
-const updateCart = require('../controller/cartController/updateCart');
-const calculateDistance = require('../utils/calculateDistance');
-const Order = require('../models/orderSchema');
+const User = require("../../models/userSchema");
+const ExpressError = require("../../utils/ExpressError");
+const calculateDistance = require("../../utils/calculateDistance");
+const Order = require("../../models/orderSchema");
 
 const placeOrder = async (req, res) => {
 
-    // 1. Get logged-in user's cart and location
+    // 1. Get logged-in user's cart, location and addresses
     const user = await User.findById(req.session.userId)
-        .select("cart location");
+        .select("cart location addresses")
+        .populate("cart.product");
 
     if (!user) {
         throw new ExpressError(404, "User not found");
     }
-
 
     // 2. Check location exists
     if (
@@ -36,7 +26,6 @@ const placeOrder = async (req, res) => {
         );
     }
 
-
     // 3. Check cart is not empty
     if (!user.cart || user.cart.length === 0) {
         throw new ExpressError(
@@ -45,27 +34,30 @@ const placeOrder = async (req, res) => {
         );
     }
 
+    // 4. Get default delivery address
+    const defaultAddress = user.addresses?.find(
+        address => address.isDefault === true
+    );
 
-    // // 4. Get products from cart
-    // const populatedUser = await User.findById(req.session.userId)
-    //     .select("cart location")
-    //     .populate("cart.product");
-
+    if (!defaultAddress) {
+        throw new ExpressError(
+            400,
+            "Please add a default delivery address before placing an order"
+        );
+    }
 
     // 5. Shop location
     // Later this should come from Store/Shop model
     const shopLatitude = 28.4595;
     const shopLongitude = 77.0266;
 
-
-    // 6. Check delivery distance
+    // 6. Calculate delivery distance
     const distance = calculateDistance(
         shopLatitude,
         shopLongitude,
         user.location.latitude,
         user.location.longitude
     );
-
 
     // 7. Delivery range check
     const DELIVERY_RADIUS = 2;
@@ -77,10 +69,8 @@ const placeOrder = async (req, res) => {
         );
     }
 
-
-    // 8. Create order items + calculate price
+    // 8. Create order items + calculate subtotal
     const items = [];
-
     let subtotal = 0;
 
     for (const cartItem of user.cart) {
@@ -95,7 +85,6 @@ const placeOrder = async (req, res) => {
             );
         }
 
-
         // Check product availability
         if (!product.isAvailable) {
             throw new ExpressError(
@@ -104,28 +93,24 @@ const placeOrder = async (req, res) => {
             );
         }
 
-
         // Check stock
         if (product.stock < cartItem.quantity) {
             throw new ExpressError(
-                400,
+                409,
                 `${product.name} is out of stock`
             );
         }
 
-
         // Decide selling price
         const sellingPrice =
             product.offerPrice !== undefined &&
-                product.offerPrice < product.price
+            product.offerPrice < product.price
                 ? product.offerPrice
                 : product.price;
 
-
-        // Calculate subtotal
+        // Calculate item subtotal
         const itemSubtotal =
             sellingPrice * cartItem.quantity;
-
 
         // Snapshot product information
         items.push({
@@ -136,23 +121,18 @@ const placeOrder = async (req, res) => {
             subtotal: itemSubtotal
         });
 
-
         subtotal += itemSubtotal;
     }
-
 
     // 9. Delivery fee
     const deliveryFee = 0;
 
-
     // 10. Discount
     const discount = 0;
-
 
     // 11. Final amount
     const totalAmount =
         subtotal + deliveryFee - discount;
-
 
     // 12. Create order
     const order = await Order.create({
@@ -169,6 +149,13 @@ const placeOrder = async (req, res) => {
 
         totalAmount,
 
+        // Snapshot delivery address
+        deliveryAddress: {
+            label: defaultAddress.label,
+            address: defaultAddress.address
+        },
+
+        // Customer location snapshot
         customerLocation: {
             type: "Point",
             coordinates: [
@@ -177,6 +164,7 @@ const placeOrder = async (req, res) => {
             ]
         },
 
+        // Shop location snapshot
         shopLocation: {
             type: "Point",
             coordinates: [
@@ -187,6 +175,7 @@ const placeOrder = async (req, res) => {
 
         deliveryDistance: distance,
 
+        // Current supported payment method
         paymentMethod: "COD",
 
         paymentStatus: "PENDING",
@@ -194,19 +183,17 @@ const placeOrder = async (req, res) => {
         orderStatus: "PENDING"
     });
 
-
     // 13. Clear cart
     user.cart = [];
 
     await user.save();
 
-
     // 14. Response
-    res.status(201).json({
+    return res.status(201).json({
         success: true,
         message: "Order placed successfully",
         order
     });
-}
+};
 
 module.exports = placeOrder;

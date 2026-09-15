@@ -1,4 +1,5 @@
 
+const { boolean } = require('joi');
 const mongoose = require('mongoose');
 
 
@@ -60,15 +61,20 @@ const userSchema = new mongoose.Schema({
                 type: String,
                 required: true,
                 trim: true,
-            }
+            },
 
-            // latitude: {
-            //     type: Number,
-            // },
+            latitude: {
+                type: Number,
+            },
 
-            // longitude: {
-            //     type: Number,
-            // }
+            longitude: {
+                type: Number,
+            },
+
+            isDefault: {
+                type: Boolean,
+                default: false,
+            },
         },
     ],
     location: {

@@ -119,7 +119,7 @@ router.post("/login/shop", validateLoginUser, Wrapasync(async (req, res) => {   
     res.status(200).json({
         success: true,
         message: "Login successful",
-        user:data
+        user: data
     });
 }));
 
@@ -169,7 +169,6 @@ router.patch('/profile', isLoggedIn, validateUserUpdate, Wrapasync(async (req, r
     })
 }));
 
-
 // address route start--------------------------
 
 router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get the addresses of the user
@@ -195,7 +194,7 @@ router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get t
 router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {    //add new addresses
     const { label, address, latitude, longitude } = req.body;
 
-    const user = await User.findById(req.session.userId).select("addresses");
+    const user = await User.findById(req.session.userId).select("addresses location");
 
     if (!user) {
         throw new ExpressError(404, "User not found");
@@ -208,6 +207,9 @@ router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res
         longitude
     })
 
+    user.location.latitude = latitude;
+    user.location.longitude = longitude;
+
     await user.save();
 
     res.status(201).json({
@@ -217,10 +219,10 @@ router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res
     });
 }))
 
-router.patch('/addresses/:addressId', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {
+router.patch("/addresses/:addressId", isLoggedIn, validateAddress, Wrapasync(async (req, res) => {
 
     const user = await User.findById(req.session.userId)
-        .select("addresses");
+        .select("addresses location");
 
     if (!user) {
         throw new ExpressError(404, "User not found");
@@ -232,16 +234,46 @@ router.patch('/addresses/:addressId', isLoggedIn, validateAddress, Wrapasync(asy
         throw new ExpressError(404, "Address not found");
     }
 
-    const { label, address: addressText, latitude, longitude } = req.body;
+    const {
+        label,
+        address: addressText,
+        latitude,
+        longitude,
+        isDefault
+    } = req.body;
 
+    console.log("BODY:", req.body);
+    console.log("isDefault:", isDefault);
+
+    // Update address details
     address.label = label;
     address.address = addressText;
     address.latitude = latitude;
     address.longitude = longitude;
 
+    // If this address is being made default
+    if (isDefault === true) {
+
+        // Make all other addresses non-default
+        user.addresses.forEach((item) => {
+            item.isDefault = false;
+        });
+
+        // Make current address default
+        address.isDefault = true;
+
+    } else if (isDefault === false) {
+
+        address.isDefault = false;
+    }
+
+    // Update user's current location
+    user.location.latitude = latitude;
+    user.location.longitude = longitude;
+
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: "Address updated successfully",
         address

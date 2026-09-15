@@ -2,6 +2,7 @@ const Joi = require("joi");
 const ExpressError = require("../utils/ExpressError");
 
 const validateAddress = (req, res, next) => {
+
     const addressSchema = Joi.object({
 
         label: Joi.string()
@@ -21,13 +22,18 @@ const validateAddress = (req, res, next) => {
         longitude: Joi.number()
             .min(-180)
             .max(180),
-    });
 
+        isDefault: Joi.boolean()
+            .optional()
+    });
 
     const { error } = addressSchema.validate(req.body);
 
     if (error) {
-        throw new ExpressError(400, error.details[0].message);
+        throw new ExpressError(
+            400,
+            error.details[0].message
+        );
     }
 
     next();

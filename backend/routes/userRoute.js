@@ -171,6 +171,29 @@ router.patch('/profile', isLoggedIn, validateUserUpdate, Wrapasync(async (req, r
 
 // address route start--------------------------
 
+router.get('/addresses/:addressId',isLoggedIn,Wrapasync(async (req, res) => {
+
+        const user = await User.findById(req.session.userId)
+            .select("addresses");
+
+        if (!user) {
+            throw new ExpressError(404, "User not found");
+        }
+
+        const address = user.addresses.id(req.params.addressId);
+
+        if (!address) {
+            throw new ExpressError(404, "Address not found");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Address found",
+            address
+        });
+    })
+);
+
 router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get the addresses of the user
     const user = await User.findById(req.session.userId)
         .select("addresses");
@@ -190,6 +213,7 @@ router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get t
         addresses: user.addresses
     });
 }));
+
 
 router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {    //add new addresses
     const { label, address, latitude, longitude } = req.body;

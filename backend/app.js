@@ -5,6 +5,11 @@ const userRoute = require('./routes/userRoute');
 const productRoute = require('./routes/productRoute');
 const orderRoute = require('./routes/orderRoute')
 const session = require('express-session');
+const shopkeeperDashboardRoutes = require("./routes/shopkeeper/dashboardRoutes");
+const shopkeeperDashboardAnalyticsRoutes = require("./routes/shopkeeper/dashboardAnalyticsRoutes");
+
+
+
 require('./models/mongoose');
 
 app.use(express.json());
@@ -23,7 +28,8 @@ app.use(session({                                          //sesssion middleware
 app.use("/api/users", userRoute);           //user route.......transfer
 app.use("/api/products", productRoute);           //product route.......transfer
 app.use("/api/orders", orderRoute);           //order route.......transfer
-
+app.use("/api/shopkeeper/dashboard", shopkeeperDashboardRoutes);         //transfer shopkeeper ..........transfer
+app.use("/api/shopkeeper/dashboard/analytics",shopkeeperDashboardAnalyticsRoutes);
 
 app.get("/",(req,res)=>{
     res.send("working");

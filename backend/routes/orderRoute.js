@@ -26,7 +26,6 @@ const router = express.Router();
 
 module.exports = router;
 
-
 router.post("/", isLoggedIn, Wrapasync(placeOrder));
 
 router.get("/", isLoggedIn, Wrapasync(getUserOrder));

@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const User = require('../../models/userSchema');
 const ExpressError = require('../../utils/ExpressError');
 const calculateDistance = require('../../utils/calculateDistance');

@@ -1,5 +1,5 @@
 const Order = require("../../models/orderSchema");
-
+const Wrapasync = require('../../utils/Wrapasync')
 const {
     getMonthRangeIST,
     getYearRangeIST
@@ -19,7 +19,7 @@ const ACTIVE_ORDER_STATUSES = [
 // Monthly Analytics
 // -----------------------------------
 
-const getMonthlyAnalytics = async (year, month) => {
+const getMonthlyAnalytics = Wrapasync(async (year, month) => {
 
     const {
         startOfMonth,
@@ -40,9 +40,7 @@ const getMonthlyAnalytics = async (year, month) => {
 
         {
             $group: {
-
                 _id: null,
-
                 totalOrders: {
                     $sum: 1
                 },
@@ -139,15 +137,13 @@ const getMonthlyAnalytics = async (year, month) => {
         pendingOrders: 0,
         sales: 0
     };
-};
-
-
+});
 
 // -----------------------------------
 // Yearly Analytics
 // -----------------------------------
 
-const getYearlyAnalytics = async (year) => {
+const getYearlyAnalytics = Wrapasync(async (year) => {
 
     const {
         startOfYear,
@@ -271,9 +267,8 @@ const getYearlyAnalytics = async (year) => {
         }
     ]);
 
-
     return result;
-};
+});
 
 
 module.exports = {

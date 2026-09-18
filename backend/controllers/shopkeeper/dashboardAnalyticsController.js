@@ -1,4 +1,5 @@
 const ExpressError = require("../../utils/ExpressError");
+const Wrapasync = require('../../utils/Wrapasync')
 
 const {
     getMonthlyAnalytics,
@@ -12,7 +13,7 @@ const {
  * Query:
  * ?year=2026&month=9
  */
-const getMonthlyDashboardAnalytics = async (req, res) => {
+const getMonthlyDashboardAnalytics = Wrapasync(async (req, res) => {
 
     // -----------------------------------
     // 1. Get query parameters
@@ -102,7 +103,7 @@ const getMonthlyDashboardAnalytics = async (req, res) => {
                 analytics.sales
         }
     });
-};
+});
 
 
 /**
@@ -111,14 +112,13 @@ const getMonthlyDashboardAnalytics = async (req, res) => {
  * Query:
  * ?year=2026
  */
-const getYearlyDashboardAnalytics = async (req, res) => {
+const getYearlyDashboardAnalytics = Wrapasync(async (req, res) => {
 
     // -----------------------------------
     // 1. Get year
     // -----------------------------------
 
     const year = Number(req.query.year);
-
 
     // -----------------------------------
     // 2. Validate year
@@ -134,7 +134,6 @@ const getYearlyDashboardAnalytics = async (req, res) => {
             "Invalid year"
         );
     }
-
 
     // -----------------------------------
     // 3. Get analytics
@@ -153,18 +152,15 @@ const getYearlyDashboardAnalytics = async (req, res) => {
     res.status(200).json({
 
         success: true,
-
         message:
             "Yearly analytics fetched successfully",
-
         period: {
             type: "year",
             year
         },
-
         analytics
     });
-};
+});
 
 
 module.exports = {

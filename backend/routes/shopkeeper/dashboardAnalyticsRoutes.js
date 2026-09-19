@@ -15,12 +15,7 @@ const { isLoggedIn, isShopkeeper } = require("../../middleware/auth");
 // ?year=2026&month=9
 // -----------------------------------
 
-router.get(
-    "/month",
-    isLoggedIn,
-    isShopkeeper,
-    getMonthlyDashboardAnalytics
-);
+router.get("/month", isLoggedIn, isShopkeeper, getMonthlyDashboardAnalytics);
 
 
 // -----------------------------------
@@ -29,12 +24,7 @@ router.get(
 // ?year=2026
 // -----------------------------------
 
-router.get(
-    "/year",
-    isLoggedIn,
-    isShopkeeper,
-    getYearlyDashboardAnalytics
-);
+router.get("/year", isLoggedIn, isShopkeeper, getYearlyDashboardAnalytics);
 
 
 module.exports = router;

@@ -7,6 +7,8 @@ const orderRoute = require('./routes/orderRoute')
 const session = require('express-session');
 const shopkeeperDashboardRoutes = require("./routes/shopkeeper/dashboardRoutes");
 const shopkeeperDashboardAnalyticsRoutes = require("./routes/shopkeeper/dashboardAnalyticsRoutes");
+const storeRoutes = require("./routes/storeRoutes");
+
 
 
 
@@ -30,6 +32,7 @@ app.use("/api/products", productRoute);           //product route.......transfer
 app.use("/api/orders", orderRoute);           //order route.......transfer
 app.use("/api/shopkeeper/dashboard", shopkeeperDashboardRoutes);         //transfer shopkeeper ..........transfer
 app.use("/api/shopkeeper/dashboard/analytics",shopkeeperDashboardAnalyticsRoutes);
+app.use("/api/shopkeeper/store", storeRoutes);     //transfer.......store 
 
 app.get("/",(req,res)=>{
     res.send("working");

@@ -38,9 +38,6 @@ router.patch('/:orderId/cancel', Wrapasync(cancelOrder));
 
 router.patch("/:orderId/status", isLoggedIn, isShopkeeper, Wrapasync(updateStatus));
 
-
-
-
 router.post("/:orderId/otp", isLoggedIn, isShopkeeper, Wrapasync(generateOtp));
 
 router.post("/:orderId/otp/verify", isLoggedIn, isShopkeeper, Wrapasync(verifyOtp));

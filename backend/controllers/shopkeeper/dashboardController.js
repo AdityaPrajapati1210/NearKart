@@ -18,6 +18,13 @@ const {
  * GET /api/shopkeeper/dashboard
  *
  * Main shopkeeper dashboard summary
+ *
+ * Query params:
+ * page  = page number
+ * limit = orders per page
+ *
+ * Example:
+ * GET /api/shopkeeper/dashboard?page=1&limit=10
  */
 const getDashboard = async (req, res) => {
 
@@ -33,7 +40,6 @@ const getDashboard = async (req, res) => {
         )
         .lean();
 
-
     if (!store) {
         throw new ExpressError(
             404,
@@ -43,7 +49,15 @@ const getDashboard = async (req, res) => {
 
 
     // -----------------------------------
-    // 2. Get today's IST date range
+    // 2. Get pagination parameters
+    // -----------------------------------
+
+    const page = req.query.page;
+    const limit = req.query.limit;
+
+
+    // -----------------------------------
+    // 3. Get today's IST date range
     // -----------------------------------
 
     const {
@@ -53,7 +67,7 @@ const getDashboard = async (req, res) => {
 
 
     // -----------------------------------
-    // 3. Fetch dashboard data
+    // 4. Fetch dashboard data
     // -----------------------------------
 
     const [
@@ -63,8 +77,14 @@ const getDashboard = async (req, res) => {
         topSellingProducts
     ] = await Promise.all([
 
-        getCurrentOrders(),
+        // ALL active orders
+        // regardless of order date
+        getCurrentOrders({
+            page,
+            limit
+        }),
 
+        // ONLY today's statistics
         getTodayStats(
             startOfDay,
             endOfDay
@@ -73,12 +93,11 @@ const getDashboard = async (req, res) => {
         getLowStockProducts(),
 
         getTopSellingProducts()
-
     ]);
 
 
     // -----------------------------------
-    // 4. Send dashboard response
+    // 5. Send dashboard response
     // -----------------------------------
 
     res.status(200).json({
@@ -99,7 +118,6 @@ const getDashboard = async (req, res) => {
 
             deliveryRadius:
                 store.deliveryRadius
-
         },
 
 
@@ -122,20 +140,15 @@ const getDashboard = async (req, res) => {
 
             sale:
                 todayStats.todaySale
-
         },
 
 
         currentOrders,
 
-
         lowStockProducts,
 
-
         topSellingProducts
-
     });
-
 };
 
 

@@ -6,11 +6,27 @@ const Order = require('../../models/orderSchema');
 // current user ke orders ko hi find kerga...bole to meowwwwwww
 const getUserOrder = async (req, res) => {
 
+    const user = await User.findById(req.session.userId)
+        .select("role")
+        .lean();
+
+    if (!user) {
+        throw new ExpressError(401, "User not found");
+    }
+
+    if (user.role !== "customer") {
+        throw new ExpressError(
+            403,
+            "Only customers can access their orders"
+        );
+    }
+
     const userId = req.session.userId;
 
     if (!userId) {
         throw new ExpressError(401, "You are not logged in");
     }
+
 
 
     // Query parameters

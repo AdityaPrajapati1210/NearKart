@@ -143,6 +143,13 @@ const orderSchema = new mongoose.Schema(
             index: true
         },
 
+        rider: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Rider",
+            default: null,
+            index: true
+        },
+
         deliveryOTPHash: {
             type: String
         },
@@ -164,7 +171,7 @@ const orderSchema = new mongoose.Schema(
         deliveredAt: Date,
         cancelledAt: Date,
 
-        
+
         cancellationReason: {
             type: String,
             trim: true

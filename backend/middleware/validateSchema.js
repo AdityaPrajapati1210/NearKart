@@ -272,11 +272,116 @@ const validateProduct = (req, res, next) => {
 };
 
 
+const validateCreateRider = (req, res, next) => {
+
+    const createRiderSchema = Joi.object({
+        name: Joi.string()
+            .trim()
+            .min(2)
+            .max(50)
+            .required(),
+
+        phone: Joi.string()
+            .pattern(/^[6-9]\d{9}$/)
+            .required()
+            .messages({
+                "string.pattern.base":
+                    "Phone number must be a valid 10-digit Indian mobile number"
+            }),
+
+        email: Joi.string()
+            .trim()
+            .lowercase()
+            .email()
+            .optional()
+            .allow(""),
+
+        password: Joi.string()
+            .min(6)
+            .max(100)
+            .required()
+    });
+
+
+    const { error } = createRiderSchema.validate(
+        req.body,
+        {
+            abortEarly: false,
+            stripUnknown: true
+        }
+    );
+
+    if (error) {
+        const message = error.details
+            .map((detail) => detail.message)
+            .join(", ");
+
+        throw new ExpressError(400, message);
+    }
+
+    next();
+};
+
+
+const validateUpdateRider = (req, res, next) => {
+
+
+    const updateRiderSchema = Joi.object({
+        name: Joi.string()
+            .trim()
+            .min(2)
+            .max(50),
+
+        phone: Joi.string()
+            .pattern(/^[6-9]\d{9}$/)
+            .messages({
+                "string.pattern.base":
+                    "Phone number must be a valid 10-digit Indian mobile number"
+            }),
+
+        email: Joi.string()
+            .trim()
+            .lowercase()
+            .email()
+            .allow(""),
+
+        password: Joi.string()
+            .min(6)
+            .max(100),
+
+        isActive: Joi.boolean()
+    })
+        .min(1)
+        .unknown(false);
+
+
+    const { error } = updateRiderSchema.validate(
+        req.body,
+        {
+            abortEarly: false,
+            stripUnknown: true
+        }
+    );
+
+    if (error) {
+        const message = error.details
+            .map((detail) => detail.message)
+            .join(", ");
+
+        throw new ExpressError(400, message);
+    }
+
+    next();
+};
+
+
 module.exports = {
     validateAddress,
     validateUser,
     validateUserUpdate,
     validateLoginUser,
     validateLocation,
-    validateProduct
+    validateProduct,
+    validateCreateRider,
+    validateUpdateRider
 }

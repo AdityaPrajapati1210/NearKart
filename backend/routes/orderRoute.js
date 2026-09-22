@@ -3,7 +3,7 @@ const User = require('../models/userSchema');
 const bcrypt = require('bcrypt');
 const Wrapasync = require('../utils/Wrapasync');
 const ExpressError = require('../utils/ExpressError');
-const { isLoggedIn , isShopkeeper} = require('../middleware/auth');
+const { isLoggedIn, isShopkeeper } = require('../middleware/auth');
 const { validateUser, validateLoginUser, validateUserUpdate, validateAddress, validateLocation } = require('../middleware/validateSchema');
 const addToCart = require('../controllers/cartController/addToCart');
 const getCart = require('../controllers/cartController/getCart');
@@ -20,11 +20,14 @@ const getAllOrder = require("../controllers/orderController/getAllOrder");
 const updateStatus = require("../controllers/orderController/updateStatus");
 const verifyOtp = require("../controllers/orderController/verifyOtp");
 const generateOtp = require("../controllers/orderController/generateOtp");
+const assignRider = require('../controllers/orderController/assignRider');
 
 
 const router = express.Router();
 
 module.exports = router;
+
+console.log("assignRider:", typeof assignRider);
 
 router.post("/", isLoggedIn, Wrapasync(placeOrder));
 
@@ -41,3 +44,5 @@ router.patch("/:orderId/status", isLoggedIn, isShopkeeper, Wrapasync(updateStatu
 router.post("/:orderId/otp", isLoggedIn, isShopkeeper, Wrapasync(generateOtp));
 
 router.post("/:orderId/otp/verify", isLoggedIn, isShopkeeper, Wrapasync(verifyOtp));
+
+router.patch("/:orderId/assign-rider",isLoggedIn,isShopkeeper,Wrapasync(assignRider));

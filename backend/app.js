@@ -8,6 +8,8 @@ const session = require('express-session');
 const shopkeeperDashboardRoutes = require("./routes/shopkeeper/dashboardRoutes");
 const shopkeeperDashboardAnalyticsRoutes = require("./routes/shopkeeper/dashboardAnalyticsRoutes");
 const storeRoutes = require("./routes/storeRoutes");
+const riderRoutes = require("./routes/riderRoute");
+
 
 
 
@@ -33,6 +35,7 @@ app.use("/api/orders", orderRoute);           //order route.......transfer
 app.use("/api/shopkeeper/dashboard", shopkeeperDashboardRoutes);         //transfer shopkeeper ..........transfer
 app.use("/api/shopkeeper/dashboard/analytics",shopkeeperDashboardAnalyticsRoutes);
 app.use("/api/shopkeeper/store", storeRoutes);     //transfer.......store 
+app.use("/api/riders", riderRoutes);               //transfer.........riderRoutes
 
 app.get("/",(req,res)=>{
     res.send("working");

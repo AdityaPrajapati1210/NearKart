@@ -38,6 +38,17 @@ const verifyOtp = async (req, res) => {
         );
     }
 
+    // Authorization: If rider, must be the assigned rider
+    const isRiderCaller = req.session.role === "rider" || req.session.riderId;
+    if (isRiderCaller) {
+        const riderId = req.session.riderId || req.session.userId;
+        if (!order.rider || order.rider.toString() !== riderId.toString()) {
+            throw new ExpressError(
+                403,
+                "You are not the assigned rider for this order"
+            );
+        }
+    }
 
     // 3. Check order status
     if (order.orderStatus !== "OUT_FOR_DELIVERY") {
@@ -129,6 +140,9 @@ const verifyOtp = async (req, res) => {
     order.orderStatus = "DELIVERED";
     order.deliveredAt = new Date();
 
+    if (order.paymentMethod === "COD") {
+        order.paymentStatus = "PAID";
+    }
 
     // 10. Invalidate OTP immediately
     order.deliveryOTPHash = undefined;
@@ -157,6 +171,7 @@ const verifyOtp = async (req, res) => {
         order: {
             _id: order._id,
             orderStatus: order.orderStatus,
+            paymentStatus: order.paymentStatus,
             deliveredAt: order.deliveredAt
         }
     });

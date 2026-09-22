@@ -20,22 +20,23 @@ const generateOtp = async (req, res) => {
         );
     }
 
+    // Authorization: If rider, must be the assigned rider
+    const isRiderCaller = req.session.role === "rider" || req.session.riderId;
+    if (isRiderCaller) {
+        const riderId = req.session.riderId || req.session.userId;
+        if (!order.rider || order.rider.toString() !== riderId.toString()) {
+            throw new ExpressError(
+                403,
+                "You are not the assigned rider for this order"
+            );
+        }
+    }
+
     // 2. OTP can only be generated for out-for-delivery order
     if (order.orderStatus !== "OUT_FOR_DELIVERY") {
         throw new ExpressError(
             400,
             `OTP can only be generated when order status is OUT_FOR_DELIVERY`
-        );
-    }
-
-    // 3. Prevent generating a new OTP before old one expires
-    if (
-        order.deliveryOTPExpiresAt &&
-        order.deliveryOTPExpiresAt > new Date()
-    ) {
-        throw new ExpressError(
-            400,
-            "A delivery OTP is already active"
         );
     }
 

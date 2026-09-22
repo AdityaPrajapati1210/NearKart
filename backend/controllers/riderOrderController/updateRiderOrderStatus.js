@@ -34,13 +34,17 @@ const updateRiderOrderStatus = async (req, res) => {
     }
 
     // --------------------------------------------------
-    // 3. Get rider
+    // 3. Get rider from session
     // --------------------------------------------------
 
-    const rider = await Rider.findOne({
-        // temporary/session-based rider identification
-        // will depend on rider authentication
-    });
+    const riderId = req.session.riderId || req.session.userId;
+
+    if (!riderId) {
+        throw new ExpressError(
+            401,
+            "Rider authentication required"
+        );
+    }
 
     // --------------------------------------------------
     // 4. Find order
@@ -59,11 +63,16 @@ const updateRiderOrderStatus = async (req, res) => {
     // 5. Check rider assignment
     // --------------------------------------------------
 
-    if (!order.rider) {
+    if (order.rider && order.rider.toString() !== riderId.toString()) {
         throw new ExpressError(
-            400,
-            "No rider is assigned to this order"
+            403,
+            "This order is assigned to another rider"
         );
+    }
+
+    // If order has no rider assigned yet, auto-assign this rider
+    if (!order.rider) {
+        order.rider = riderId;
     }
 
     // --------------------------------------------------

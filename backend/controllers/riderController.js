@@ -171,32 +171,39 @@ const loginRider = async (req, res) => {
 
     const {
         phone,
+        email,
+        identifier,
         password
     } = req.body;
+
+    const loginCredential = (identifier || phone || email || "").trim();
 
     // --------------------------------------------------
     // 1. Basic validation
     // --------------------------------------------------
 
-    if (!phone || !password) {
+    if (!loginCredential || !password) {
         throw new ExpressError(
             400,
-            "Phone and password are required"
+            "Phone/Email and password are required"
         );
     }
 
     // --------------------------------------------------
-    // 2. Find rider
+    // 2. Find rider by phone or email
     // --------------------------------------------------
 
-    const rider = await Rider.findOne({
-        phone: phone.trim()
-    });
+    const is10DigitPhone = /^[0-9]{10}$/.test(loginCredential);
+    const rider = await Rider.findOne(
+        is10DigitPhone
+            ? { phone: loginCredential }
+            : { email: loginCredential.toLowerCase() }
+    );
 
     if (!rider) {
         throw new ExpressError(
             401,
-            "Invalid phone or password"
+            "Invalid phone/email or password"
         );
     }
 
@@ -205,12 +212,10 @@ const loginRider = async (req, res) => {
     // --------------------------------------------------
 
     if (!rider.isActive) {
-
         throw new ExpressError(
             403,
             "Rider account is inactive"
         );
-
     }
 
     // --------------------------------------------------
@@ -223,20 +228,19 @@ const loginRider = async (req, res) => {
     );
 
     if (!isPasswordValid) {
-
         throw new ExpressError(
             401,
-            "Invalid phone or password"
+            "Invalid phone/email or password"
         );
-
     }
 
     // --------------------------------------------------
     // 5. Create rider session
     // --------------------------------------------------
 
+    req.session.userId = rider._id.toString();
     req.session.riderId = rider._id.toString();
-
+    req.session.role = "rider";
     req.session.riderRole = "rider";
 
     // --------------------------------------------------
@@ -246,36 +250,25 @@ const loginRider = async (req, res) => {
     req.session.save((err) => {
 
         if (err) {
-
             throw new ExpressError(
                 500,
                 "Failed to create rider session"
             );
-
         }
 
         res.status(200).json({
-
             success: true,
-
             message: "Rider login successful",
-
             rider: {
-
                 id: rider._id,
-
                 name: rider.name,
-
                 phone: rider.phone,
-
                 email: rider.email || null,
-
-                isActive: rider.isActive
-
+                role: "rider",
+                isActive: rider.isActive,
+                shopkeeper: rider.shopkeeper
             }
-
         });
-
     });
 };
 
@@ -451,11 +444,110 @@ const deleteRider = async (req, res) => {
 };
 
 
+// ======================================================
+// GET LOGGED-IN RIDER PROFILE
+// GET /api/riders/profile OR GET /api/riders/me
+// ======================================================
+
+const getRiderProfile = async (req, res) => {
+    const riderId = req.session.riderId || req.session.userId;
+
+    if (!riderId) {
+        throw new ExpressError(401, "Rider authentication required");
+    }
+
+    const rider = await Rider.findById(riderId)
+        .select("-passwordHash")
+        .populate("shopkeeper", "name phone email");
+
+    if (!rider) {
+        throw new ExpressError(404, "Rider not found");
+    }
+
+    res.status(200).json({
+        success: true,
+        rider
+    });
+};
+
+
+// ======================================================
+// UPDATE RIDER LOCATION
+// PATCH /api/riders/location
+// ======================================================
+
+const updateRiderLocation = async (req, res) => {
+    const riderId = req.session.riderId || req.session.userId;
+
+    if (!riderId) {
+        throw new ExpressError(401, "Rider authentication required");
+    }
+
+    const { latitude, longitude } = req.body;
+
+    if (
+        typeof latitude !== "number" ||
+        typeof longitude !== "number" ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180
+    ) {
+        throw new ExpressError(400, "Valid latitude (-90 to 90) and longitude (-180 to 180) are required");
+    }
+
+    const rider = await Rider.findByIdAndUpdate(
+        riderId,
+        {
+            currentLocation: {
+                type: "Point",
+                coordinates: [longitude, latitude]
+            },
+            lastLocationUpdate: new Date()
+        },
+        { new: true }
+    ).select("-passwordHash");
+
+    if (!rider) {
+        throw new ExpressError(404, "Rider not found");
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "Location updated successfully",
+        currentLocation: rider.currentLocation,
+        lastLocationUpdate: rider.lastLocationUpdate
+    });
+};
+
+
+// ======================================================
+// RIDER LOGOUT
+// POST /api/riders/logout
+// ======================================================
+
+const logoutRider = (req, res, next) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return next(err);
+        }
+        res.clearCookie("connect.sid");
+        res.status(200).json({
+            success: true,
+            message: "Rider logout successful"
+        });
+    });
+};
+
+
 module.exports = {
     createRider,
     getRiders,
     getRider,
     updateRider,
     deleteRider,
-    loginRider
+    loginRider,
+    getRiderProfile,
+    updateRiderLocation,
+    logoutRider
 };

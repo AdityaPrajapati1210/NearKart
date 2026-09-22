@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require('../models/userSchema');
+const Rider = require('../models/riderSchema');
 const bcrypt = require('bcrypt');
 const Wrapasync = require('../utils/Wrapasync');
 const ExpressError = require('../utils/ExpressError');
@@ -67,30 +68,83 @@ router.post("/register", validateUser, Wrapasync(async (req, res) => {          
 );
 
 router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {         //login route...
-    const { email, password } = req.body;
+    const { email, phone, identifier, password } = req.body;
+    const loginCredential = (identifier || email || phone || "").trim();
 
-    const user = await User.findOne({ email });
+    const is10DigitPhone = /^[0-9]{10}$/.test(loginCredential);
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        throw new ExpressError(401, "Invalid email or password");
+    // 1. Try finding in User collection (by email or phone)
+    let user = null;
+    if (is10DigitPhone) {
+        user = await User.findOne({ phone: loginCredential });
+    } else {
+        user = await User.findOne({ email: loginCredential.toLowerCase() });
     }
 
-    req.session.userId = user._id;
+    if (user) {
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        if (!isPasswordMatch) {
+            throw new ExpressError(401, "Invalid email/phone or password");
+        }
 
-    // console.log("SESSION:", req.session);
-    // console.log("SESSION ID:", req.sessionID);
-    const data = {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-    };
+        req.session.userId = user._id;
+        req.session.role = user.role;
 
-    res.status(200).json({
-        success: true,
-        message: "Login successful",
-        user: data
-    });
+        const data = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: data
+        });
+    }
+
+    // 2. If not found in User, check Rider collection
+    let rider = null;
+    if (is10DigitPhone) {
+        rider = await Rider.findOne({ phone: loginCredential });
+    } else {
+        rider = await Rider.findOne({ email: loginCredential.toLowerCase() });
+    }
+
+    if (rider) {
+        if (!rider.isActive) {
+            throw new ExpressError(403, "Rider account is inactive. Please contact store owner.");
+        }
+
+        const isPasswordMatch = await bcrypt.compare(password, rider.passwordHash);
+        if (!isPasswordMatch) {
+            throw new ExpressError(401, "Invalid email/phone or password");
+        }
+
+        req.session.userId = rider._id.toString();
+        req.session.riderId = rider._id.toString();
+        req.session.role = "rider";
+        req.session.riderRole = "rider";
+
+        const data = {
+            id: rider._id,
+            name: rider.name,
+            email: rider.email || null,
+            phone: rider.phone,
+            role: "rider",
+            shopkeeper: rider.shopkeeper
+        };
+
+        return res.status(200).json({
+            success: true,
+            message: "Rider login successful",
+            user: data
+        });
+    }
+
+    throw new ExpressError(401, "Invalid email/phone or password");
 }));
 
 router.post("/login/shop", validateLoginUser, Wrapasync(async (req, res) => {         //login shop...
@@ -216,7 +270,7 @@ router.get('/addresses', isLoggedIn, Wrapasync(async (req, res) => {     //get t
 
 
 router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res) => {    //add new addresses
-    const { label, address, latitude, longitude } = req.body;
+    const { label, address, latitude, longitude, isDefault } = req.body;
 
     const user = await User.findById(req.session.userId).select("addresses location");
 
@@ -224,15 +278,24 @@ router.post('/addresses', isLoggedIn, validateAddress, Wrapasync(async (req, res
         throw new ExpressError(404, "User not found");
     }
 
+    const shouldBeDefault = isDefault === true || user.addresses.length === 0;
+    if (shouldBeDefault) {
+        user.addresses.forEach(item => { item.isDefault = false; });
+    }
+
     user.addresses.push({
         label,
         address,
         latitude,
-        longitude
-    })
+        longitude,
+        isDefault: shouldBeDefault
+    });
 
-    user.location.latitude = latitude;
-    user.location.longitude = longitude;
+    if (latitude !== undefined && longitude !== undefined) {
+        user.location = user.location || {};
+        user.location.latitude = latitude;
+        user.location.longitude = longitude;
+    }
 
     await user.save();
 

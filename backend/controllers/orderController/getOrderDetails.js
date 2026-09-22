@@ -9,21 +9,18 @@ const getOrderDetails = async (req, res) => {
         const userId = req.session.userId;
 
 
-        // 1. Find order belonging to logged-in user
-        const order = await Order.findOne({
-            _id: orderId,
-            user: userId
-        })
-            // 2. Don't expose sensitive OTP information
+        // 1. Find order
+        const order = await Order.findById(orderId)
             .select(
                 "-deliveryOTPHash " +
                 "-deliveryOTPExpiresAt " +
                 "-deliveryOTPAttempts"
             )
+            .populate("user", "name phone email")
+            .populate("rider", "name phone")
             .lean();
 
-
-        // 3. Order not found
+        // 2. Order not found
         if (!order) {
             throw new ExpressError(
                 404,
@@ -31,6 +28,18 @@ const getOrderDetails = async (req, res) => {
             );
         }
 
+        // 3. Authorization check
+        const isRider = req.session.role === "rider" || req.session.riderId;
+        const riderId = req.session.riderId || req.session.userId;
+        const role = req.session.role;
+
+        if (role === "customer" && order.user._id.toString() !== userId.toString()) {
+            throw new ExpressError(403, "Access denied");
+        }
+
+        if (isRider && order.rider && order.rider._id.toString() !== riderId.toString()) {
+            throw new ExpressError(403, "Access denied to other riders' orders");
+        }
 
         // 4. Send order details
         res.status(200).json({

@@ -160,15 +160,16 @@ const validateLoginUser = (req, res, next) => {
     const userSchema = Joi.object({
         email: Joi.string()
             .trim()
-            .email()
             .lowercase()
-            .required()
-            .messages({
-                "string.empty": "Email is required",
-                "string.email": "Please enter a valid email address",
-                "any.required": "Email is required"
-            }),
+            .optional(),
 
+        phone: Joi.string()
+            .trim()
+            .optional(),
+
+        identifier: Joi.string()
+            .trim()
+            .optional(),
 
         password: Joi.string()
             .min(6)
@@ -178,9 +179,11 @@ const validateLoginUser = (req, res, next) => {
                 "string.min": "Password must be at least 6 characters",
                 "any.required": "Password is required"
             }),
+    }).or("email", "phone", "identifier").messages({
+        "object.missing": "Email or phone number is required"
     });
 
-    const { error } = userSchema.validate(req.body);
+    const { error, value } = userSchema.validate(req.body);
 
     if (error) {
         throw new ExpressError(
@@ -189,6 +192,7 @@ const validateLoginUser = (req, res, next) => {
         );
     }
 
+    req.body = value;
     next();
 };
 

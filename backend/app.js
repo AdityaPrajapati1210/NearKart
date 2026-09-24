@@ -12,8 +12,6 @@ const riderRoutes = require("./routes/riderRoute");
 
 
 
-
-
 require('./models/mongoose');
 
 app.use(express.json());

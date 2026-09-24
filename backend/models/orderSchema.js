@@ -150,6 +150,17 @@ const orderSchema = new mongoose.Schema(
             index: true
         },
 
+        declinedRiders: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Rider"
+            }
+        ],
+
+        riderAssignedAt: {
+            type: Date
+        },
+
         deliveryOTPHash: {
             type: String
         },

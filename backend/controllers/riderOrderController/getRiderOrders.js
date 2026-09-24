@@ -48,7 +48,8 @@ const getRiderOrders = async (req, res) => {
         $or: [
             { rider: null },
             { rider: { $exists: false } }
-        ]
+        ],
+        declinedRiders: { $ne: riderId }
     })
         .select(
             "user items subtotal deliveryFee discount totalAmount deliveryAddress customerLocation orderStatus paymentMethod paymentStatus createdAt readyAt"
@@ -96,8 +97,8 @@ const getRiderOrders = async (req, res) => {
         availableToPickup: availableOrders.length
     };
 
-    // If caller specifically requested only available orders
-    if (type === "available") {
+    // If caller specifically requested only available orders (via query or /orders/available route)
+    if (type === "available" || (req.path && req.path.includes("available"))) {
         return res.status(200).json({
             success: true,
             count: availableOrders.length,

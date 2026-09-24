@@ -83,29 +83,27 @@ router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {        
 
     if (user) {
         const isPasswordMatch = await bcrypt.compare(password, user.password);
-        if (!isPasswordMatch) {
-            throw new ExpressError(401, "Invalid email/phone or password");
+        if (isPasswordMatch) {
+            req.session.userId = user._id;
+            req.session.role = user.role;
+
+            const data = {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role
+            };
+
+            return res.status(200).json({
+                success: true,
+                message: "Login successful",
+                user: data
+            });
         }
-
-        req.session.userId = user._id;
-        req.session.role = user.role;
-
-        const data = {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role
-        };
-
-        return res.status(200).json({
-            success: true,
-            message: "Login successful",
-            user: data
-        });
     }
 
-    // 2. If not found in User, check Rider collection
+    // 2. Check Rider collection (by phone or email)
     let rider = null;
     if (is10DigitPhone) {
         rider = await Rider.findOne({ phone: loginCredential });
@@ -140,7 +138,8 @@ router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {        
         return res.status(200).json({
             success: true,
             message: "Rider login successful",
-            user: data
+            user: data,
+            rider: data
         });
     }
 
@@ -191,6 +190,30 @@ router.post('/logout', isLoggedIn, (req, res, next) => {                  //logo
 });
 
 router.get("/profile", isLoggedIn, Wrapasync(async (req, res) => {      //get profile ...
+
+    if (req.session.role === "rider" || req.session.riderId) {
+        const riderId = req.session.riderId || req.session.userId;
+        const rider = await Rider.findById(riderId)
+            .select("-passwordHash")
+            .populate("shopkeeper", "name phone email");
+
+        if (rider) {
+            return res.status(200).json({
+                success: true,
+                message: "Profile fetched successfully",
+                user: {
+                    id: rider._id,
+                    name: rider.name,
+                    email: rider.email,
+                    phone: rider.phone,
+                    role: "rider",
+                    shopkeeper: rider.shopkeeper,
+                    isActive: rider.isActive
+                },
+                rider
+            });
+        }
+    }
 
     const user = await User.findById(req.session.userId)
         .select("-password");  //password ko chod k

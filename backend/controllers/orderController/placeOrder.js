@@ -219,13 +219,15 @@ const placeOrder = async (req, res) => {
         }
 
 
-        // Decide selling price
-        const sellingPrice =
-            product.offerPrice !== undefined &&
-            product.offerPrice !== null &&
-            product.offerPrice < product.price
-                ? product.offerPrice
-                : product.price;
+        // Decide selling price: offerPrice only applies if it is a valid discount (> 0 and < price)
+        const hasValidOfferPrice =
+            typeof product.offerPrice === "number" &&
+            product.offerPrice > 0 &&
+            product.offerPrice < product.price;
+
+        const sellingPrice = hasValidOfferPrice
+            ? product.offerPrice
+            : product.price;
 
 
         // Calculate subtotal

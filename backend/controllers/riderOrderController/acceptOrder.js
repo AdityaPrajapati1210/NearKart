@@ -35,6 +35,15 @@ const acceptOrder = async (req, res) => {
     }
 
     order.rider = riderId;
+    order.riderAssignedAt = new Date();
+
+    // If rider had previously declined this order, remove from declinedRiders
+    if (order.declinedRiders && order.declinedRiders.length > 0) {
+        order.declinedRiders = order.declinedRiders.filter(
+            id => id.toString() !== riderId.toString()
+        );
+    }
+
     await order.save();
 
     res.status(200).json({

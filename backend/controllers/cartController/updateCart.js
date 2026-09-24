@@ -16,7 +16,6 @@ const updateCart = async (req, res) => {
     const product = await Product.findById(productId);
 
     if (!product) {
-        body
         throw new ExpressError(404, "Product not found");
     }
 

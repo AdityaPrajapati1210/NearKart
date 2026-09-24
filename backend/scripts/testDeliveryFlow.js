@@ -261,7 +261,7 @@ const runTest = async () => {
         const riderCookies = riderUnifiedLoginRes.cookies;
         console.log("✓ Rider logged in from SAME LOGIN PAGE (/api/users/login) with role: 'rider'!");
 
-        // Also test direct rider login (/api/riders/login)
+        // Verify that direct rider login (/api/riders/login) has been removed (returns 404)
         const directRiderLogin = await request("/api/riders/login", {
             method: "POST",
             body: {
@@ -269,10 +269,19 @@ const runTest = async () => {
                 password: riderPassword
             }
         });
-        if (directRiderLogin.status !== 200) {
-            throw new Error(`Direct rider login failed: ${JSON.stringify(directRiderLogin.data)}`);
+        if (directRiderLogin.status !== 404) {
+            throw new Error(`Expected /api/riders/login to be removed (404), but got status ${directRiderLogin.status}`);
         }
-        console.log("✓ Direct rider login (/api/riders/login) also verified successfully!");
+        console.log("✓ Verified extra rider login route (/api/riders/login) is removed (404)!");
+
+        // Verify that direct rider logout (/api/riders/logout) has been removed (returns 404)
+        const directRiderLogout = await request("/api/riders/logout", {
+            method: "POST"
+        }, riderCookies);
+        if (directRiderLogout.status !== 404) {
+            throw new Error(`Expected /api/riders/logout to be removed (404), but got status ${directRiderLogout.status}`);
+        }
+        console.log("✓ Verified extra rider logout route (/api/riders/logout) is removed (404)!");
 
         // 7. RIDER VIEWS ORDERS
         console.log("\n--- Testing Rider Order View ---");
@@ -334,6 +343,30 @@ const runTest = async () => {
         }, riderCookies);
         const profileRes = await request("/api/riders/profile", {}, riderCookies);
         console.log(`✓ Rider profile fetched: ${profileRes.data.rider.name} (${profileRes.data.rider.phone})`);
+
+        // Check main profile route for rider
+        const mainProfileRes = await request("/api/users/profile", {}, riderCookies);
+        if (mainProfileRes.status !== 200 || mainProfileRes.data.user.role !== "rider") {
+            throw new Error(`Main profile route failed for rider: ${JSON.stringify(mainProfileRes.data)}`);
+        }
+        console.log("✓ Rider profile fetched from main profile route (/api/users/profile)!");
+
+        // 13. RIDER LOGOUT VIA MAIN LOGOUT ROUTE (/api/users/logout)
+        console.log("\n--- Testing Rider Logout via Main Logout Route ---");
+        const riderLogoutRes = await request("/api/users/logout", {
+            method: "POST"
+        }, riderCookies);
+        if (riderLogoutRes.status !== 200 || !riderLogoutRes.data.success) {
+            throw new Error(`Rider main logout failed: ${JSON.stringify(riderLogoutRes.data)}`);
+        }
+        console.log("✓ Rider logged out successfully via main logout route (/api/users/logout)!");
+
+        // 14. VERIFY RIDER CANNOT ACCESS PROTECTED ROUTES AFTER LOGOUT
+        const postLogoutRes = await request("/api/riders/orders", {}, riderCookies);
+        if (postLogoutRes.status !== 401) {
+            throw new Error(`Expected 401 after logout, but got status ${postLogoutRes.status}`);
+        }
+        console.log("✓ Verified rider cannot access protected routes after logout (401)!");
 
         console.log("\n=======================================================");
         console.log("🎉 ALL TESTS PASSED! FULL DELIVERY LIFECYCLE VERIFIED!");

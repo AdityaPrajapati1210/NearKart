@@ -79,31 +79,31 @@ const assignRider = async (req, res) => {
     }
 
     // --------------------------------------------------
-    // 6. Check if already assigned
+    // 6. Assign or Re-assign rider
     // --------------------------------------------------
 
-    if (order.rider) {
-        throw new ExpressError(
-            400,
-            "A rider is already assigned to this order"
+    const isReassignment = !!order.rider;
+    order.rider = rider._id;
+    order.riderAssignedAt = new Date();
+
+    // If this rider had previously declined, clear from declined list on manual assignment
+    if (order.declinedRiders && order.declinedRiders.length > 0) {
+        order.declinedRiders = order.declinedRiders.filter(
+            id => id.toString() !== rider._id.toString()
         );
     }
-
-    // --------------------------------------------------
-    // 7. Assign rider
-    // --------------------------------------------------
-
-    order.rider = rider._id;
 
     await order.save();
 
     // --------------------------------------------------
-    // 8. Response
+    // 7. Response
     // --------------------------------------------------
 
     res.status(200).json({
         success: true,
-        message: "Rider assigned successfully",
+        message: isReassignment
+            ? "Rider re-assigned successfully"
+            : "Rider assigned successfully",
         order: {
             id: order._id,
             orderStatus: order.orderStatus,

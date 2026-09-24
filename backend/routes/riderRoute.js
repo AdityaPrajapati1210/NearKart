@@ -8,10 +8,8 @@ const {
     getRider,
     updateRider,
     deleteRider,
-    loginRider,
     getRiderProfile,
-    updateRiderLocation,
-    logoutRider
+    updateRiderLocation
 } = require("../controllers/riderController");
 
 const { isLoggedIn, isShopkeeper, isRider } = require("../middleware/auth");
@@ -21,19 +19,14 @@ const wrapAsync = require("../utils/Wrapasync");
 const getRiderOrders = require("../controllers/riderOrderController/getRiderOrders");
 const updateRiderOrderStatus = require("../controllers/riderOrderController/updateRiderOrderStatus");
 const acceptOrder = require("../controllers/riderOrderController/acceptOrder");
+const declineOrder = require("../controllers/riderOrderController/declineOrder");
 const generateOtp = require("../controllers/orderController/generateOtp");
 const verifyOtp = require("../controllers/orderController/verifyOtp");
 const getOrderDetails = require("../controllers/orderController/getOrderDetails");
 
 // ======================================================
-// 1. RIDER AUTH & PROFILE
+// 1. RIDER PROFILE & LOCATION
 // ======================================================
-
-// Direct rider login (also supported via /api/users/login)
-router.post("/login", wrapAsync(loginRider));
-
-// Rider logout
-router.post("/logout", isRider, logoutRider);
 
 // Rider profile
 router.get("/profile", isRider, wrapAsync(getRiderProfile));
@@ -55,6 +48,10 @@ router.get("/orders/:orderId", isRider, wrapAsync(getOrderDetails));
 
 // Rider accepts an available order
 router.patch("/orders/:orderId/accept", isRider, wrapAsync(acceptOrder));
+
+// Rider declines / rejects an assigned or available order
+router.patch("/orders/:orderId/decline", isRider, wrapAsync(declineOrder));
+router.patch("/orders/:orderId/reject", isRider, wrapAsync(declineOrder));
 
 // Rider marks order as OUT_FOR_DELIVERY
 router.patch("/orders/:orderId/status", isRider, wrapAsync(updateRiderOrderStatus));

@@ -1,9 +1,17 @@
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+
+import AppRouter from "./router/AppRouter";
+import { checkAuth } from "./store/authThunks";
+
 function App() {
-    return (
-        <div>
-            <h1>NearKart</h1>
-        </div>
-    );
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(checkAuth());
+    }, [dispatch]);
+
+    return <AppRouter />;
 }
 
 export default App;

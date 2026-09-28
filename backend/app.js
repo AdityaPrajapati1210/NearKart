@@ -20,9 +20,7 @@ const riderRoutes = require("./routes/riderRoute");
 
 
 
-<<<<<<< HEAD
-require('./models/mongoose');
-=======
+// <<<<<<< HEAD
 // ======================================================
 // DATABASE
 // ======================================================
@@ -34,7 +32,7 @@ require("./config/redis");
 // ======================================================
 // MIDDLEWARE
 // ======================================================
->>>>>>> 51a1824 (socket and redis setup)
+// >>>>>>> 51a1824 (socket and redis setup)
 
 app.use(express.json());
 

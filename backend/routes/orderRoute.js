@@ -21,19 +21,20 @@ const updateStatus = require("../controllers/orderController/updateStatus");
 const verifyOtp = require("../controllers/orderController/verifyOtp");
 const generateOtp = require("../controllers/orderController/generateOtp");
 const assignRider = require('../controllers/orderController/assignRider');
+const getLiveRiderLocation = require("../controllers/orderController/getLiveRiderLocation");
 
 
 const router = express.Router();
 
 module.exports = router;
 
-console.log("assignRider:", typeof assignRider);
-
 router.post("/", isLoggedIn, Wrapasync(placeOrder));
 
 router.get("/", isLoggedIn, Wrapasync(getUserOrder));
 
 router.get("/shopkeeper", isLoggedIn, isShopkeeper, Wrapasync(getAllOrder));
+
+router.get("/:orderId/live-location",isLoggedIn,Wrapasync(getLiveRiderLocation));
 
 router.get('/:orderId', isLoggedIn, Wrapasync(getOrderDetails));
 

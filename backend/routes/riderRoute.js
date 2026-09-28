@@ -30,7 +30,7 @@ const getOrderDetails = require("../controllers/orderController/getOrderDetails"
 
 // Rider profile
 router.get("/profile", isRider, wrapAsync(getRiderProfile));
-router.get("/me", isRider, wrapAsync(getRiderProfile));
+// router.get("/me", isRider, wrapAsync(getRiderProfile));
 
 // Rider GPS location update
 router.patch("/location", isRider, wrapAsync(updateRiderLocation));

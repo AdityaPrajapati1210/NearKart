@@ -16,11 +16,8 @@ function Checkout() {
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState("");
 
-    const [paymentMethod, setPaymentMethod] = useState("COD");
-
     const [loading, setLoading] = useState(true);
     const [placingOrder, setPlacingOrder] = useState(false);
-
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -35,7 +32,8 @@ function Checkout() {
                     ]);
 
                 const cartItems = cartResponse.cart || [];
-                const userAddresses = addressResponse.addresses || [];
+                const userAddresses =
+                    addressResponse.addresses || [];
 
                 setCart(cartItems);
                 setAddresses(userAddresses);
@@ -50,7 +48,9 @@ function Checkout() {
                     setSelectedAddress(userAddresses[0]._id);
                 }
             } catch (error) {
-                setError(error.message);
+                setError(
+                    error.message || "Failed to prepare checkout."
+                );
             } finally {
                 setLoading(false);
             }
@@ -89,7 +89,7 @@ function Checkout() {
 
             const response = await createOrder({
                 addressId: selectedAddress,
-                paymentMethod
+                paymentMethod: "COD"
             });
 
             const orderId =
@@ -106,7 +106,9 @@ function Checkout() {
                 });
             }
         } catch (error) {
-            setError(error.message);
+            setError(
+                error.message || "Failed to place order."
+            );
         } finally {
             setPlacingOrder(false);
         }
@@ -136,7 +138,6 @@ function Checkout() {
     return (
         <main className="min-h-[calc(100vh-4rem)] bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">
-
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">
                         Checkout
@@ -154,7 +155,7 @@ function Checkout() {
 
                 <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
 
-                    {/* Checkout Details */}
+                    {/* Delivery Details */}
                     <div className="space-y-6">
 
                         {/* Address */}
@@ -233,22 +234,13 @@ function Checkout() {
                                 Payment Method
                             </h2>
 
-                            <div className="mt-5 space-y-3">
-
-                                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50">
+                            <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                <div className="flex items-start gap-3">
                                     <input
                                         type="radio"
-                                        name="paymentMethod"
-                                        value="COD"
-                                        checked={
-                                            paymentMethod === "COD"
-                                        }
-                                        onChange={(event) =>
-                                            setPaymentMethod(
-                                                event.target.value
-                                            )
-                                        }
-                                        className="accent-blue-600"
+                                        checked
+                                        readOnly
+                                        className="mt-1 accent-blue-600"
                                     />
 
                                     <div>
@@ -256,39 +248,11 @@ function Checkout() {
                                             Cash on Delivery
                                         </p>
 
-                                        <p className="text-sm text-gray-500">
+                                        <p className="mt-1 text-sm text-gray-500">
                                             Pay when your order is delivered.
                                         </p>
                                     </div>
-                                </label>
-
-                                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50">
-                                    <input
-                                        type="radio"
-                                        name="paymentMethod"
-                                        value="ONLINE"
-                                        checked={
-                                            paymentMethod === "ONLINE"
-                                        }
-                                        onChange={(event) =>
-                                            setPaymentMethod(
-                                                event.target.value
-                                            )
-                                        }
-                                        className="accent-blue-600"
-                                    />
-
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Online Payment
-                                        </p>
-
-                                        <p className="text-sm text-gray-500">
-                                            Pay securely online.
-                                        </p>
-                                    </div>
-                                </label>
-
+                                </div>
                             </div>
                         </section>
                     </div>

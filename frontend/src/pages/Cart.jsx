@@ -17,7 +17,6 @@ function Cart() {
     const [loading, setLoading] = useState(true);
     const [updatingProduct, setUpdatingProduct] = useState(null);
     const [clearing, setClearing] = useState(false);
-
     const [error, setError] = useState("");
 
     const loadCart = async () => {
@@ -28,7 +27,7 @@ function Cart() {
 
             setCart(response.cart || []);
         } catch (error) {
-            setError(error.message);
+            setError(error.message || "Failed to load cart.");
         } finally {
             setLoading(false);
         }
@@ -54,7 +53,9 @@ function Cart() {
 
             setCart(response.cart || []);
         } catch (error) {
-            setError(error.message);
+            setError(
+                error.message || "Failed to update cart."
+            );
         } finally {
             setUpdatingProduct(null);
         }
@@ -69,13 +70,23 @@ function Cart() {
 
             setCart(response.cart || []);
         } catch (error) {
-            setError(error.message);
+            setError(
+                error.message || "Failed to remove item."
+            );
         } finally {
             setUpdatingProduct(null);
         }
     };
 
     const handleClearCart = async () => {
+        const confirmed = window.confirm(
+            "Are you sure you want to clear your cart?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
         try {
             setError("");
             setClearing(true);
@@ -84,7 +95,9 @@ function Cart() {
 
             setCart([]);
         } catch (error) {
-            setError(error.message);
+            setError(
+                error.message || "Failed to clear cart."
+            );
         } finally {
             setClearing(false);
         }
@@ -140,10 +153,14 @@ function Cart() {
                     )}
                 </div>
 
-                <ErrorMessage
-                    message={error}
-                    onClose={() => setError("")}
-                />
+                {error && (
+                    <div className="mb-6">
+                        <ErrorMessage
+                            message={error}
+                            onClose={() => setError("")}
+                        />
+                    </div>
+                )}
 
                 {cart.length === 0 ? (
                     <EmptyState
@@ -252,7 +269,6 @@ function Cart() {
                                                     <p className="font-bold text-gray-900">
                                                         ₹{itemTotal}
                                                     </p>
-
                                                 </div>
 
                                                 <button

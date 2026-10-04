@@ -9,9 +9,17 @@ const ExpressError = require("../utils/ExpressError");
 
 const getStore = async (req, res) => {
 
-    const store = await Store.findOne({
+    let store = await Store.findOne({
         shopkeeper: req.session.userId
     });
+
+    if (!store) {
+        store = await Store.findOne({ storeKey: "MAIN_STORE" }) || await Store.findOne({});
+        if (store) {
+            store.shopkeeper = req.session.userId;
+            await store.save();
+        }
+    }
 
     if (!store) {
         throw new ExpressError(404, "Store not found");
@@ -39,9 +47,16 @@ const updateStore = async (req, res) => {
         deliveryRadius
     } = req.body;
 
-    const store = await Store.findOne({
+    let store = await Store.findOne({
         shopkeeper: req.session.userId
     });
+
+    if (!store) {
+        store = await Store.findOne({ storeKey: "MAIN_STORE" }) || await Store.findOne({});
+        if (store) {
+            store.shopkeeper = req.session.userId;
+        }
+    }
 
     if (!store) {
         throw new ExpressError(404, "Store not found");
@@ -80,7 +95,7 @@ const updateStore = async (req, res) => {
 
 const updateStoreStatus = async (req, res) => {
 
-        console.log("REQ BODY:", req.body);
+    console.log("REQ BODY:", req.body);
     console.log("isOpen:", req.body.isOpen);
     console.log("TYPE:", typeof req.body.isOpen);
 
@@ -93,10 +108,16 @@ const updateStoreStatus = async (req, res) => {
         );
     }
 
-
-    const store = await Store.findOne({
+    let store = await Store.findOne({
         shopkeeper: req.session.userId
     });
+
+    if (!store) {
+        store = await Store.findOne({ storeKey: "MAIN_STORE" }) || await Store.findOne({});
+        if (store) {
+            store.shopkeeper = req.session.userId;
+        }
+    }
 
     if (!store) {
         throw new ExpressError(404, "Store not found");
@@ -150,9 +171,16 @@ const updateStoreLocation = async (req, res) => {
         );
     }
 
-    const store = await Store.findOne({
+    let store = await Store.findOne({
         shopkeeper: req.session.userId
     });
+
+    if (!store) {
+        store = await Store.findOne({ storeKey: "MAIN_STORE" }) || await Store.findOne({});
+        if (store) {
+            store.shopkeeper = req.session.userId;
+        }
+    }
 
     if (!store) {
         throw new ExpressError(404, "Store not found");

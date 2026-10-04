@@ -28,7 +28,16 @@ router.post("/", isLoggedIn, isShopkeeper, upload.single("image"), validateProdu
             offerPrice = price;
         }
 
-        const result = await uploadToCloudinary(req.file.buffer);
+        let imageUrl = typeof req.body.image === 'string' && req.body.image.trim()
+            ? req.body.image.trim()
+            : "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400";
+        let publicId = "";
+
+        if (req.file && req.file.buffer) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            imageUrl = result.secure_url;
+            publicId = result.public_id;
+        }
 
         const product = new Product({
             name,
@@ -37,8 +46,8 @@ router.post("/", isLoggedIn, isShopkeeper, upload.single("image"), validateProdu
             offerPrice,
             category,
             image: {
-                url: result.secure_url,
-                publicId: result.public_id
+                url: imageUrl,
+                publicId: publicId
             },
             stock
         });

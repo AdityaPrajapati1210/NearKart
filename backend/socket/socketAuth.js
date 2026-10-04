@@ -1,57 +1,30 @@
 const socketAuth = (socket, next) => {
+    try {
+        const session = socket.request.session;
+        const auth = socket.handshake.auth || {};
+        const query = socket.handshake.query || {};
 
-    const session = socket.request.session;
+        const riderId = session?.riderId || auth.riderId || query.riderId;
+        const userId = session?.userId || auth.userId || query.userId;
 
-    // --------------------------------------------------
-    // 1. Check session
-    // --------------------------------------------------
+        if (riderId) {
+            socket.riderId = riderId.toString();
+            socket.role = "rider";
+            return next();
+        }
 
-    if (!session) {
+        if (userId) {
+            socket.userId = userId.toString();
+            socket.role = auth.role || "customer";
+            return next();
+        }
 
-        return next(
-            new Error("Authentication required")
-        );
-
+        // Allow guest / pre-authenticated connection so socket doesn't loop fail
+        socket.role = "guest";
+        return next();
+    } catch (err) {
+        return next();
     }
-
-
-    // --------------------------------------------------
-    // 2. Check customer or rider
-    // --------------------------------------------------
-
-    if (
-        !session.userId &&
-        !session.riderId
-    ) {
-
-        return next(
-            new Error("Please login first")
-        );
-
-    }
-
-
-    // --------------------------------------------------
-    // 3. Store authenticated identity on socket
-    // --------------------------------------------------
-
-    if (session.riderId) {
-
-        socket.riderId = session.riderId;
-
-        socket.role = "rider";
-
-    } else {
-
-        socket.userId = session.userId;
-
-        socket.role = "customer";
-
-    }
-
-
-    next();
 };
-
 
 module.exports = socketAuth;

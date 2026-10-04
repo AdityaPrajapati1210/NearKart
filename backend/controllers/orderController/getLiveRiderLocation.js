@@ -68,77 +68,69 @@ const getLiveRiderLocation = async (req, res) => {
     // 4. Check order status
     // --------------------------------------------------
 
-    if (order.orderStatus !== "OUT_FOR_DELIVERY") {
-
-        throw new ExpressError(
-            400,
-            "Live tracking is available only when the order is out for delivery"
-        );
-
+    const activeStatuses = ["ACCEPTED", "PREPARING", "READY", "OUT_FOR_DELIVERY"];
+    if (!activeStatuses.includes(order.orderStatus)) {
+        return res.status(200).json({
+            success: true,
+            tracking: false,
+            message: `Tracking available once accepted (current status: ${order.orderStatus})`,
+            location: null
+        });
     }
-
 
     // --------------------------------------------------
     // 5. Check rider assignment
     // --------------------------------------------------
 
     if (!order.rider) {
-
-        throw new ExpressError(
-            404,
-            "No rider is assigned to this order"
-        );
-
+        return res.status(200).json({
+            success: true,
+            tracking: false,
+            message: "No rider is assigned to this order yet",
+            location: null
+        });
     }
 
 
     // --------------------------------------------------
-    // 6. Get latest location from Redis
+    // 6. Get latest location from Redis or MongoDB fallback
     // --------------------------------------------------
 
-    const redisKey = `rider:${order.rider}:location`;
+    let location = null;
 
-    const locationData = await redis.get(redisKey);
+    try {
+        const redisKey = `rider:${order.rider}:location`;
+        const locationData = await redis.get(redisKey);
+        if (locationData) {
+            location = JSON.parse(locationData);
+        }
+    } catch (err) {
+        // Fall back to MongoDB below
+    }
 
+    if (!location) {
+        const Rider = require("../../models/riderSchema");
+        const rider = await Rider.findById(order.rider).select("currentLocation lastLocationUpdate").lean();
+        if (rider && rider.currentLocation?.coordinates && (rider.currentLocation.coordinates[0] !== 0 || rider.currentLocation.coordinates[1] !== 0)) {
+            location = {
+                latitude: rider.currentLocation.coordinates[1],
+                longitude: rider.currentLocation.coordinates[0],
+                updatedAt: rider.lastLocationUpdate ? new Date(rider.lastLocationUpdate).getTime() : Date.now()
+            };
+        }
+    }
 
     // --------------------------------------------------
     // 7. Rider location unavailable
     // --------------------------------------------------
 
-    if (!locationData) {
-
+    if (!location) {
         return res.status(200).json({
-
             success: true,
-
             tracking: false,
-
             message: "Rider location is currently unavailable",
-
             location: null
-
         });
-
-    }
-
-
-    // --------------------------------------------------
-    // 8. Parse location
-    // --------------------------------------------------
-
-    let location;
-
-    try {
-
-        location = JSON.parse(locationData);
-
-    } catch (error) {
-
-        throw new ExpressError(
-            500,
-            "Invalid rider location data"
-        );
-
     }
 
 
@@ -153,6 +145,10 @@ const getLiveRiderLocation = async (req, res) => {
         tracking: true,
 
         orderId: order._id,
+
+        lat: location.latitude,
+
+        lng: location.longitude,
 
         location
 

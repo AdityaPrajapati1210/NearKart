@@ -40,50 +40,57 @@ const generateOtp = async (req, res) => {
         );
     }
 
-    // 4. Generate 6-digit OTP
+    // 4. Generate 4-digit OTP
     const otp = crypto
-        .randomInt(100000, 1000000)
+        .randomInt(1000, 10000)
         .toString();
 
     // 5. Hash OTP before storing
     const otpHash = await bcrypt.hash(otp, 10);
 
-    // 6. OTP expires after 5 minutes
+    // 6. OTP expires after 24 hours
     const expiresAt = new Date(
-        Date.now() + 5 * 60 * 1000
+        Date.now() + 24 * 60 * 60 * 1000
     );
 
     // 7. Save OTP information
     order.deliveryOTPHash = otpHash;
     order.deliveryOTPExpiresAt = expiresAt;
     order.deliveryOTPAttempts = 0;
+    order.plainOTP = otp;
 
     await order.save();
 
-    /*
-        IMPORTANT:
+    console.log("\n" + "=".repeat(50));
+    console.log(`🔑 [DEVELOPMENT] DELIVERY OTP FOR ORDER [${order._id}]`);
+    console.log(`>>> OTP: ${otp} <<<`);
+    console.log("=".repeat(50) + "\n");
 
-        Production:
-        Send `otp` through SMS / WhatsApp.
-        Do NOT return the OTP in API response.
-
-        Example:
-        await sendDeliveryOTP(order.user, otp);
-    */
-
-    console.log(
-        `Delivery OTP for Order ${order._id}: ${otp}`
-    );
+    try {
+        const { getIO } = require("../../config/socket");
+        const io = getIO();
+        const payload = {
+            orderId: order._id,
+            orderStatus: order.orderStatus,
+            status: order.orderStatus,
+            otp: otp,
+            developmentOTP: otp,
+            paymentStatus: order.paymentStatus
+        };
+        io.to(`order:${order._id}`).emit("ORDER_STATUS_CHANGED", payload);
+        io.to(order._id.toString()).emit("ORDER_STATUS_CHANGED", payload);
+        if (order.user) {
+            io.to(`user_${order.user}`).emit("ORDER_STATUS_CHANGED", payload);
+        }
+    } catch (sockErr) {}
 
     return res.status(200).json({
         success: true,
         message: "Delivery OTP generated successfully",
-
-        otpExpiresAt: expiresAt,
-
-        // REMOVE THIS IN PRODUCTION
-        developmentOTP: otp
-    })
+        otp: otp,
+        developmentOTP: otp,
+        otpExpiresAt: expiresAt
+    });
 };
 
 module.exports = generateOtp;

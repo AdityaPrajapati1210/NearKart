@@ -38,7 +38,7 @@ router.get("/:orderId/live-location",isLoggedIn,Wrapasync(getLiveRiderLocation))
 
 router.get('/:orderId', isLoggedIn, Wrapasync(getOrderDetails));
 
-router.patch('/:orderId/cancel', Wrapasync(cancelOrder));
+router.patch('/:orderId/cancel', isLoggedIn, Wrapasync(cancelOrder));
 
 router.patch("/:orderId/status", isLoggedIn, isShopkeeper, Wrapasync(updateStatus));
 

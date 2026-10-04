@@ -109,12 +109,20 @@ const getRiders = async (req, res) => {
         );
     }
 
-    const riders = await Rider.find({
+    let riders = await Rider.find({
         shopkeeper: shopkeeperId
     })
         .select("-passwordHash")
         .sort({ createdAt: -1 })
         .lean();
+
+    // If no riders directly assigned to this shopkeeper, return all active campus riders
+    if (riders.length === 0) {
+        riders = await Rider.find({ isActive: true })
+            .select("-passwordHash")
+            .sort({ createdAt: -1 })
+            .lean();
+    }
 
     res.status(200).json({
         success: true,
@@ -510,6 +518,67 @@ const updateRiderLocation = async (req, res) => {
 
     if (!rider) {
         throw new ExpressError(404, "Rider not found");
+    }
+
+    // Sync to Redis cache
+    try {
+        const redis = require("../config/redis");
+        await redis.set(
+            `rider:${riderId}:location`,
+            JSON.stringify({ latitude, longitude, updatedAt: Date.now() }),
+            "EX",
+            60 * 60 // 1 hour TTL
+        );
+    } catch (redisErr) {
+        // Redis optional in development
+    }
+
+    // Broadcast location to active orders
+    try {
+        const Order = require("../models/orderSchema");
+        const { getIO } = require("../config/socket");
+        const io = getIO();
+
+        const activeOrders = await Order.find({
+            rider: riderId,
+            orderStatus: { $in: ["ACCEPTED", "PREPARING", "READY", "OUT_FOR_DELIVERY"] }
+        }).select("_id user orderStatus").lean();
+
+        for (const order of activeOrders) {
+            const payload = {
+                orderId: order._id,
+                riderId: riderId.toString(),
+                lat: latitude,
+                lng: longitude,
+                location: {
+                    latitude,
+                    longitude
+                },
+                updatedAt: Date.now()
+            };
+            io.to(`order:${order._id}`).emit("rider-location", payload);
+            io.to(`order:${order._id}`).emit("RIDER_LOCATION_UPDATED", payload);
+            io.to(order._id.toString()).emit("rider-location", payload);
+            io.to(order._id.toString()).emit("RIDER_LOCATION_UPDATED", payload);
+            if (order.user) {
+                io.to(`user_${order.user}`).emit("rider-location", payload);
+                io.to(`user_${order.user}`).emit("RIDER_LOCATION_UPDATED", payload);
+            }
+        }
+
+        const globalPayload = {
+            riderId: riderId.toString(),
+            latitude,
+            longitude,
+            lat: latitude,
+            lng: longitude,
+            location: { latitude, longitude },
+            updatedAt: Date.now()
+        };
+        io.emit("RIDER_LOCATION_BROADCAST", globalPayload);
+        io.emit("RIDER_LOCATION_UPDATED", globalPayload);
+    } catch (sockErr) {
+        // Socket broadcast optional
     }
 
     res.status(200).json({

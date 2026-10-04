@@ -9,8 +9,12 @@ const removeFromCart = async (req, res) => {
 
     const user = await User.findById(req.session.userId);
 
-    if(!user){
-        throw new ExpressError(404,"User not found");
+    if (!user) {
+        if (req.session) {
+            req.session.destroy(() => {});
+        }
+        res.clearCookie('connect.sid');
+        throw new ExpressError(401, "Please login first");
     }
 
     const initialLength = user.cart.length;

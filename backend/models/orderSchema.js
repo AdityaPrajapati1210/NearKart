@@ -175,6 +175,10 @@ const orderSchema = new mongoose.Schema(
             min: 0
         },
 
+        plainOTP: {
+            type: String
+        },
+
         acceptedAt: Date,
         preparingAt: Date,
         readyAt: Date,

@@ -41,6 +41,7 @@ const getAllOrder = async (req, res) => {
                     "-deliveryOTPAttempts"
                 )
                 .populate("user", "name phone email")
+                .populate("rider", "name phone email")
                 .lean(),
 
             Order.countDocuments({})

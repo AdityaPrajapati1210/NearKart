@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const User = require('../../models/userSchema');
 const ExpressError = require('../../utils/ExpressError');
 const calculateDistance = require('../../utils/calculateDistance');
@@ -11,15 +13,14 @@ const getUserOrder = async (req, res) => {
         .lean();
 
     if (!user) {
-        throw new ExpressError(401, "User not found");
+        if (req.session) {
+            req.session.destroy(() => {});
+        }
+        res.clearCookie('connect.sid');
+        throw new ExpressError(401, "Please login first");
     }
 
-    if (user.role !== "customer") {
-        throw new ExpressError(
-            403,
-            "Only customers can access their orders"
-        );
-    }
+
 
     const userId = req.session.userId;
 
@@ -77,16 +78,56 @@ const getUserOrder = async (req, res) => {
             "-deliveryOTPExpiresAt " +
             "-deliveryOTPAttempts"
         )
+        .populate("rider", "name phone currentLocation lastLocationUpdate")
         .lean();
 
 
+    const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        let riderLocation = null;
+        if (order.rider && order.rider.currentLocation?.coordinates) {
+            const coords = order.rider.currentLocation.coordinates;
+            if (coords[0] !== 0 || coords[1] !== 0) {
+                riderLocation = {
+                    lat: coords[1],
+                    lng: coords[0]
+                };
+            }
+        }
+
+        let updatedOrder = {
+            ...order,
+            riderLocation: riderLocation
+        };
+
+        if (order.orderStatus === "OUT_FOR_DELIVERY") {
+            let plainOTP = order.plainOTP;
+            if (!plainOTP) {
+                plainOTP = crypto.randomInt(1000, 10000).toString();
+                const otpHash = await bcrypt.hash(plainOTP, 10);
+                await Order.findByIdAndUpdate(order._id, {
+                    plainOTP: plainOTP,
+                    deliveryOTPHash: otpHash,
+                    deliveryOTPExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                    deliveryOTPAttempts: 0
+                });
+            }
+            updatedOrder = {
+                ...updatedOrder,
+                plainOTP: plainOTP,
+                otp: plainOTP,
+                developmentOTP: plainOTP
+            };
+        }
+        return updatedOrder;
+    }));
+
     res.status(200).json({
         success: true,
-        count: orders.length,
+        count: enrichedOrders.length,
         filters: {
             status: status || null
         },
-        orders
+        orders: enrichedOrders
     });
 }
 

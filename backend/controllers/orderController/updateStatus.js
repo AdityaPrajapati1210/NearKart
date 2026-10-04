@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const User = require('../../models/userSchema');
 const ExpressError = require('../../utils/ExpressError');
 const calculateDistance = require('../../utils/calculateDistance');
@@ -110,10 +112,24 @@ const updateStatus = async (req, res) => {
 
             case "OUT_FOR_DELIVERY":
                 order.outForDeliveryAt = now;
+                if (!order.plainOTP) {
+                    const otp = crypto.randomInt(1000, 10000).toString();
+                    order.deliveryOTPHash = await bcrypt.hash(otp, 10);
+                    order.deliveryOTPExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                    order.deliveryOTPAttempts = 0;
+                    order.plainOTP = otp;
+                }
                 break;
 
             case "DELIVERED":
                 order.deliveredAt = now;
+                order.deliveryOTPHash = undefined;
+                order.deliveryOTPExpiresAt = undefined;
+                order.deliveryOTPAttempts = 0;
+                order.plainOTP = undefined;
+                if (order.paymentMethod === "COD") {
+                    order.paymentStatus = "PAID";
+                }
                 break;
 
             case "REJECTED":
@@ -125,20 +141,43 @@ const updateStatus = async (req, res) => {
 
         await order.save();
 
+        try {
+            const { getIO } = require("../../config/socket");
+            const io = getIO();
+            const payload = {
+                orderId: order._id,
+                orderStatus: order.orderStatus,
+                status: order.orderStatus,
+                otp: order.plainOTP,
+                developmentOTP: order.plainOTP,
+                paymentStatus: order.paymentStatus
+            };
+            io.to(`order:${order._id}`).emit("ORDER_STATUS_CHANGED", payload);
+            io.to(order._id.toString()).emit("ORDER_STATUS_CHANGED", payload);
+            if (order.user) {
+                io.to(`user_${order.user}`).emit("ORDER_STATUS_CHANGED", payload);
+            }
+        } catch (sockErr) {
+            console.warn("Socket broadcast error:", sockErr.message);
+        }
+
+
+        const populatedOrder = await Order.findById(order._id)
+            .populate("user", "name phone email")
+            .populate("rider", "name phone email")
+            .select("-deliveryOTPHash -deliveryOTPExpiresAt -deliveryOTPAttempts")
+            .lean();
+
+        if (order.plainOTP) {
+            populatedOrder.otp = order.plainOTP;
+            populatedOrder.plainOTP = order.plainOTP;
+            populatedOrder.developmentOTP = order.plainOTP;
+        }
 
         res.status(200).json({
             success: true,
             message: `Order status updated to ${status}`,
-            order: {
-                _id: order._id,
-                orderStatus: order.orderStatus,
-                acceptedAt: order.acceptedAt,
-                preparingAt: order.preparingAt,
-                readyAt: order.readyAt,
-                outForDeliveryAt: order.outForDeliveryAt,
-                deliveredAt: order.deliveredAt,
-                rejectionReason: order.rejectionReason
-            }
+            order: populatedOrder
         });
     }
 

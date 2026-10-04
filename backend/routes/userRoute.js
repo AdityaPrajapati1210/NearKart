@@ -20,8 +20,8 @@ module.exports = router;
 
 
 router.post("/register", validateUser, Wrapasync(async (req, res) => {           //register route
-    console.log(`req.body = ${req.body}`);
-    const { name, email, phone, password, CnfPassword } = req.body;
+    console.log(`req.body = ${JSON.stringify(req.body)}`);
+    const { name, email, phone, password, CnfPassword, role } = req.body;
 
     if (password !== CnfPassword) {
         throw new ExpressError(
@@ -50,7 +50,8 @@ router.post("/register", validateUser, Wrapasync(async (req, res) => {          
         name,
         email,
         phone,
-        password: hashedPassword
+        password: hashedPassword,
+        role: role || "customer"
     });
 
     return res.status(201).json({
@@ -60,7 +61,8 @@ router.post("/register", validateUser, Wrapasync(async (req, res) => {          
             id: user._id,
             name: user.name,
             email: user.email,
-            phone: user.phone
+            phone: user.phone,
+            role: user.role
         }
     });
 
@@ -68,7 +70,7 @@ router.post("/register", validateUser, Wrapasync(async (req, res) => {          
 );
 
 router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {         //login route...
-    const { email, phone, identifier, password } = req.body;
+    const { email, phone, identifier, password, portal, role: requestedRole } = req.body;
     const loginCredential = (identifier || email || phone || "").trim();
 
     const is10DigitPhone = /^[0-9]{10}$/.test(loginCredential);
@@ -84,6 +86,10 @@ router.post("/login", validateLoginUser, Wrapasync(async (req, res) => {        
     if (user) {
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (isPasswordMatch) {
+            // Clear any rider session state
+            delete req.session.riderId;
+            delete req.session.riderRole;
+
             req.session.userId = user._id;
             req.session.role = user.role;
 
@@ -156,12 +162,13 @@ router.post("/login/shop", validateLoginUser, Wrapasync(async (req, res) => {   
     }
 
     user.role = "shopkeeper";
-    user.save();
+    await user.save();
 
+    delete req.session.riderId;
+    delete req.session.riderRole;
     req.session.userId = user._id;
+    req.session.role = "shopkeeper";
 
-    // console.log("SESSION:", req.session);
-    // console.log("SESSION ID:", req.sessionID);
     const data = {
         name: user.name,
         email: user.email,
@@ -176,17 +183,25 @@ router.post("/login/shop", validateLoginUser, Wrapasync(async (req, res) => {   
     });
 }));
 
-router.post('/logout', isLoggedIn, (req, res, next) => {                  //logout route..
-    req.session.destroy((err) => {
-        if (err) {
-            return next(err);
-        }
+router.post('/logout', (req, res, next) => {                  //logout route..
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                return next(err);
+            }
+            res.clearCookie('connect.sid');
+            return res.status(200).json({
+                success: true,
+                message: "Logout successful"
+            });
+        });
+    } else {
         res.clearCookie('connect.sid');
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Logout successful"
         });
-    });
+    }
 });
 
 router.get("/profile", isLoggedIn, Wrapasync(async (req, res) => {      //get profile ...
@@ -219,7 +234,11 @@ router.get("/profile", isLoggedIn, Wrapasync(async (req, res) => {      //get pr
         .select("-password");  //password ko chod k
 
     if (!user) {
-        throw new ExpressError(404, "User not found");
+        if (req.session) {
+            req.session.destroy(() => {});
+        }
+        res.clearCookie('connect.sid');
+        throw new ExpressError(401, "Please login first");
     }
 
     res.status(200).json({

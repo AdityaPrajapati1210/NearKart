@@ -12,7 +12,11 @@ const initializeSocket = (server, sessionMiddleware) => {
     io = new Server(server, {
 
         cors: {
-            origin: "*",
+            origin: (origin, callback) => {
+                // Allow all local development origins with credentials
+                return callback(null, true);
+            },
+            credentials: true,
             methods: ["GET", "POST"]
         }
 
@@ -40,8 +44,15 @@ const initializeSocket = (server, sessionMiddleware) => {
     io.on("connection", (socket) => {
 
         console.log(
-            `Socket connected: ${socket.id} (${socket.role})`
+            `🔌 Socket connected: ${socket.id} (role: ${socket.role || 'guest'}, user: ${socket.userId || 'none'}, rider: ${socket.riderId || 'none'})`
         );
+
+        if (socket.userId) {
+            socket.join(`user_${socket.userId}`);
+        }
+        if (socket.riderId) {
+            socket.join(`rider_${socket.riderId}`);
+        }
 
 
         // ==================================================

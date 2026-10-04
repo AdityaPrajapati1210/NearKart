@@ -12,7 +12,11 @@ const getCart = async (req, res) => {
         });
 
     if (!user) {
-        throw new ExpressError(404, "User not found");
+        if (req.session) {
+            req.session.destroy(() => {});
+        }
+        res.clearCookie('connect.sid');
+        throw new ExpressError(401, "Please login first");
     }
 
     res.status(200).json({

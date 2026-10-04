@@ -1,0 +1,30 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: nearkart-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional Redis GUI (Redis Insight) for viewing cached keys and data
+  # Open http://localhost:8001 in your browser to inspect Redis
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: nearkart-redis-insight
+    restart: unless-stopped
+    ports:
+      - "8001:5540"
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+    driver: local

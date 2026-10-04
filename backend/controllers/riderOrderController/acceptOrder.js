@@ -46,6 +46,45 @@ const acceptOrder = async (req, res) => {
 
     await order.save();
 
+    // Broadcast update to customer & rooms
+    try {
+        const { getIO } = require("../../config/socket");
+        const Rider = require("../../models/riderSchema");
+        const io = getIO();
+
+        const riderDoc = await Rider.findById(riderId).select("name phone currentLocation").lean();
+        let riderLocation = null;
+        if (riderDoc?.currentLocation?.coordinates) {
+            const coords = riderDoc.currentLocation.coordinates;
+            if (coords[0] !== 0 || coords[1] !== 0) {
+                riderLocation = { lat: coords[1], lng: coords[0] };
+            }
+        }
+
+        const payload = {
+            orderId: order._id,
+            orderStatus: order.orderStatus,
+            status: order.orderStatus,
+            rider: riderDoc,
+            riderLocation,
+            deliveryRider: riderDoc ? {
+                _id: riderDoc._id,
+                id: riderDoc._id,
+                name: riderDoc.name,
+                mobile: riderDoc.phone,
+                phone: riderDoc.phone
+            } : null
+        };
+
+        io.to(`order:${order._id}`).emit("ORDER_STATUS_CHANGED", payload);
+        io.to(order._id.toString()).emit("ORDER_STATUS_CHANGED", payload);
+        if (order.user) {
+            io.to(`user_${order.user}`).emit("ORDER_STATUS_CHANGED", payload);
+        }
+    } catch (sockErr) {
+        console.warn("Socket broadcast error in acceptOrder:", sockErr.message);
+    }
+
     res.status(200).json({
         success: true,
         message: "Order accepted successfully",

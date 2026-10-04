@@ -7,16 +7,20 @@ const cancelOrder = async (req, res) => {
     const { orderId } = req.params;
     const userId = req.session.userId;
 
-    // 1. Find order belonging to logged-in user
-    const order = await Order.findOne({
-        _id: orderId,
-        user: userId
-    });
+    const user = await User.findById(userId);
+    const order = await Order.findById(orderId);
 
     if (!order) {
         throw new ExpressError(
             404,
             "Order not found"
+        );
+    }
+
+    if (user?.role !== "shopkeeper" && order.user.toString() !== String(userId)) {
+        throw new ExpressError(
+            403,
+            "You are not authorized to cancel this order"
         );
     }
 
@@ -27,7 +31,7 @@ const cancelOrder = async (req, res) => {
         "ACCEPTED"
     ];
 
-    if (!nonCancellableStatuses.includes(order.orderStatus)) {
+    if (!cancellableStatuses.includes(order.orderStatus)) {
         throw new ExpressError(
             400,
             `Order cannot be cancelled because its status is ${order.orderStatus}`

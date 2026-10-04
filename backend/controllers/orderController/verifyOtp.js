@@ -19,11 +19,11 @@ const verifyOtp = async (req, res) => {
     }
 
 
-    // OTP must contain exactly 6 digits
-    if (!/^\d{6}$/.test(String(otp))) {
+    // OTP must contain 4 to 6 digits
+    if (!/^\d{4,6}$/.test(String(otp))) {
         throw new ExpressError(
             400,
-            "OTP must be a 6-digit number"
+            "OTP must be a 4-digit or 6-digit number"
         );
     }
 
@@ -148,6 +148,7 @@ const verifyOtp = async (req, res) => {
     order.deliveryOTPHash = undefined;
     order.deliveryOTPExpiresAt = undefined;
     order.deliveryOTPAttempts = 0;
+    order.plainOTP = undefined;
     
     // 11. Save order
     await order.save();
@@ -162,6 +163,22 @@ const verifyOtp = async (req, res) => {
         user.orderHistory.push(order._id);
         await user.save();
     }
+
+    try {
+        const { getIO } = require("../../config/socket");
+        const io = getIO();
+        const payload = {
+            orderId: order._id,
+            orderStatus: "DELIVERED",
+            status: "DELIVERED",
+            paymentStatus: order.paymentStatus
+        };
+        io.to(`order:${order._id}`).emit("ORDER_STATUS_CHANGED", payload);
+        io.to(order._id.toString()).emit("ORDER_STATUS_CHANGED", payload);
+        if (order.user) {
+            io.to(`user_${order.user}`).emit("ORDER_STATUS_CHANGED", payload);
+        }
+    } catch (sockErr) {}
 
 
     // 12. Success response

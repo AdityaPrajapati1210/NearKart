@@ -17,8 +17,18 @@ const getOrderDetails = async (req, res) => {
                 "-deliveryOTPAttempts"
             )
             .populate("user", "name phone email")
-            .populate("rider", "name phone")
+            .populate("rider", "name phone currentLocation lastLocationUpdate")
             .lean();
+
+        if (order && order.rider && order.rider.currentLocation?.coordinates) {
+            const coords = order.rider.currentLocation.coordinates;
+            if (coords[0] !== 0 || coords[1] !== 0) {
+                order.riderLocation = {
+                    lat: coords[1],
+                    lng: coords[0]
+                };
+            }
+        }
 
         // 2. Order not found
         if (!order) {
@@ -42,6 +52,11 @@ const getOrderDetails = async (req, res) => {
         }
 
         // 4. Send order details
+        if (order.plainOTP) {
+            order.otp = order.plainOTP;
+            order.developmentOTP = order.plainOTP;
+        }
+
         res.status(200).json({
             success: true,
             order

@@ -28,7 +28,7 @@ const getRiderOrders = async (req, res) => {
 
     const orders = await Order.find(assignedQuery)
         .select(
-            "user items subtotal deliveryFee discount totalAmount deliveryAddress customerLocation orderStatus paymentMethod paymentStatus createdAt acceptedAt outForDeliveryAt deliveredAt"
+            "user items subtotal deliveryFee discount totalAmount deliveryAddress customerLocation shopLocation orderStatus paymentMethod paymentStatus createdAt acceptedAt outForDeliveryAt deliveredAt plainOTP"
         )
         .populate(
             "user",
@@ -38,6 +38,13 @@ const getRiderOrders = async (req, res) => {
             createdAt: -1
         })
         .lean();
+
+    const enrichedAssignedOrders = orders.map(order => {
+        if (order.plainOTP) {
+            return { ...order, otp: order.plainOTP, developmentOTP: order.plainOTP };
+        }
+        return order;
+    });
 
     // --------------------------------------------------
     // 2. Get unassigned available orders ready for delivery
@@ -52,7 +59,7 @@ const getRiderOrders = async (req, res) => {
         declinedRiders: { $ne: riderId }
     })
         .select(
-            "user items subtotal deliveryFee discount totalAmount deliveryAddress customerLocation orderStatus paymentMethod paymentStatus createdAt readyAt"
+            "user items subtotal deliveryFee discount totalAmount deliveryAddress customerLocation shopLocation orderStatus paymentMethod paymentStatus createdAt readyAt plainOTP"
         )
         .populate(
             "user",
@@ -109,7 +116,7 @@ const getRiderOrders = async (req, res) => {
     res.status(200).json({
         success: true,
         summary,
-        orders,
+        orders: enrichedAssignedOrders,
         availableOrders
     });
 };

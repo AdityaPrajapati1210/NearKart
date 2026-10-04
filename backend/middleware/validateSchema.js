@@ -93,6 +93,10 @@ const validateUser = (req, res, next) => {
                 "string.min": "Password must be at least 6 characters",
                 "any.required": "Password is required"
             }),
+
+        role: Joi.string()
+            .valid("customer", "shopkeeper", "admin")
+            .optional(),
     });
 
     const { error } = userSchema.validate(req.body);
@@ -179,6 +183,12 @@ const validateLoginUser = (req, res, next) => {
                 "string.min": "Password must be at least 6 characters",
                 "any.required": "Password is required"
             }),
+
+        portal: Joi.string()
+            .optional(),
+
+        role: Joi.string()
+            .optional(),
     }).or("email", "phone", "identifier").messages({
         "object.missing": "Email or phone number is required"
     });

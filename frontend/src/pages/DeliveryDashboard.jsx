@@ -253,10 +253,10 @@ const ActiveOrderCard = ({ order, token, onComplete, riderCoords }) => {
             )}
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-1 text-3xs font-semibold">
-            <span className="font-bold text-gray-400 block tracking-wider">Client Destination Spot</span>
-            <p className="text-2xs font-extrabold text-gray-850">{order.customer?.name}</p>
-            <p className="text-gray-550 leading-normal">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-1 text-3xs font-semibold">
+            <span className="font-bold text-slate-400 block tracking-wider">Client Destination Spot</span>
+            <p className="text-2xs font-extrabold text-slate-900">{order.customer?.name}</p>
+            <p className="text-slate-500 leading-normal">
               College: {order.college} | Room: {order.roomNo || 'N/A'} {order.hostel ? `(${order.hostel})` : ''}
             </p>
             {order.customer?.mobile && (
@@ -269,24 +269,24 @@ const ActiveOrderCard = ({ order, token, onComplete, riderCoords }) => {
 
         {/* Location Routing Map */}
         <div className="space-y-1">
-          <div className="flex justify-between items-center text-4xs font-bold text-gray-400">
+          <div className="flex justify-between items-center text-4xs font-bold text-slate-400">
             <span>Rider Live Navigator Map</span>
             <span className="flex items-center gap-1 font-semibold">
-              <Clock size={10} className="animate-spin text-red-500" />
+              <Clock size={10} className="animate-spin text-rose-500" />
               <span>OSRM street path updates dynamically (30s)</span>
             </span>
           </div>
-          <div ref={mapContainerRef} className="w-full h-48 bg-gray-100 rounded-lg border border-gray-250 z-10" />
+          <div ref={mapContainerRef} className="w-full h-48 bg-slate-100 rounded-xl border border-slate-200 z-10" />
         </div>
 
         {/* Items pick list */}
-        <div className="bg-gray-50/50 p-3 rounded-lg border border-gray-100 space-y-1.5">
-          <h5 className="text-3xs font-extrabold uppercase text-gray-400 tracking-wider">Items Check-list</h5>
-          <div className="space-y-1 font-semibold text-3xs text-gray-650">
+        <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-200/60 space-y-1.5">
+          <h5 className="text-3xs font-extrabold uppercase text-slate-400 tracking-wider">Items Check-list</h5>
+          <div className="space-y-1 font-semibold text-3xs text-slate-600">
             {order.items.map((item, idx) => (
               <div key={idx} className="flex justify-between items-center">
-                <span>{item.name} <strong className="text-gray-800">x{item.quantity}</strong></span>
-                <span className="text-gray-800 font-extrabold">₹{item.price * item.quantity}</span>
+                <span>{item.name} <strong className="text-slate-900">x{item.quantity}</strong></span>
+                <span className="text-slate-900 font-extrabold">₹{item.price * item.quantity}</span>
               </div>
             ))}
           </div>
@@ -294,13 +294,13 @@ const ActiveOrderCard = ({ order, token, onComplete, riderCoords }) => {
       </div>
 
       {/* Right Column: OTP validation and progression actions */}
-      <div className="p-5 md:w-1/3 flex flex-col justify-center space-y-4 bg-gray-50/20">
-        <h5 className="text-3xs font-extrabold uppercase text-gray-400 tracking-wider text-center">Job Actions Control</h5>
+      <div className="p-5 md:w-1/3 flex flex-col justify-center space-y-4 bg-slate-50/40">
+        <h5 className="text-3xs font-extrabold uppercase text-slate-400 tracking-wider text-center">Job Actions Control</h5>
         
         {order.orderStatus === 'PREPARING' || order.orderStatus === 'READY' ? (
           <button
             onClick={() => handleUpdateStatus('OUT_FOR_DELIVERY')}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-2xs transition shadow-sm flex items-center justify-center gap-1"
+            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-2xs transition shadow-sm flex items-center justify-center gap-1"
           >
             <Navigation size={12} className="animate-pulse" />
             <span>Start Out for Delivery</span>
@@ -309,12 +309,12 @@ const ActiveOrderCard = ({ order, token, onComplete, riderCoords }) => {
 
         {order.orderStatus === 'OUT_FOR_DELIVERY' ? (
           <form onSubmit={handleVerifyOtp} className="space-y-3">
-            <div className="bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-250 text-4xs font-bold uppercase tracking-wider block text-center animate-pulse">
+            <div className="bg-amber-50 text-amber-800 p-2 rounded-xl border border-amber-200 text-4xs font-bold uppercase tracking-wider block text-center animate-pulse">
               🛵 Out for delivery active
             </div>
 
             <div className="space-y-1 text-center font-semibold">
-              <label className="text-3xs font-extrabold text-gray-400 uppercase tracking-wide block">Customer Handover OTP</label>
+              <label className="text-3xs font-extrabold text-slate-400 uppercase tracking-wide block">Customer Handover OTP</label>
               <input
                 type="text"
                 maxLength="6"
@@ -325,12 +325,12 @@ const ActiveOrderCard = ({ order, token, onComplete, riderCoords }) => {
                   setOtpError('');
                 }}
                 disabled={verifying || otpSuccess}
-                className="w-full text-center border border-gray-200 rounded-xl py-2.5 px-3 text-lg font-black tracking-widest focus:outline-none focus:ring-1 focus:ring-green-500 bg-white"
+                className="w-full text-center border border-slate-200 rounded-xl py-2.5 px-3 text-lg font-black tracking-widest focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
               />
             </div>
 
             {otpError && (
-              <p className="text-3xs text-red-650 font-bold text-center bg-red-50 p-1.5 rounded border border-red-100">
+              <p className="text-3xs text-rose-600 font-bold text-center bg-rose-50 p-1.5 rounded-lg border border-rose-200">
                 {otpError}
               </p>
             )}

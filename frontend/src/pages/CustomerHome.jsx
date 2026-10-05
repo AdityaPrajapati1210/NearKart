@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Compass, AlertCircle, ShoppingCart, Store, Clock, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Search, MapPin, Compass, AlertCircle, ShoppingCart, Clock, Phone, ShieldCheck, CheckCircle2, Sparkles, ChevronRight, Store } from 'lucide-react';
 import { storeService } from '../services/storeService';
 import { productService } from '../services/productService';
 
-const CustomerHome = ({ addToCart }) => {
+const CustomerHome = ({ addToCart, cart = [] }) => {
+  const navigate = useNavigate();
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(['All']);
@@ -13,7 +15,9 @@ const CustomerHome = ({ addToCart }) => {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [error, setError] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showStoreInfoModal, setShowStoreInfoModal] = useState(false);
   const [gpsError, setGpsError] = useState('');
+  const [addedItemKey, setAddedItemKey] = useState(null);
 
   // 0. Location-based display filter parameters
   const [clientCoords, setClientCoords] = useState(() => {
@@ -24,6 +28,10 @@ const CustomerHome = ({ addToCart }) => {
       return null;
     }
   });
+
+  // Calculate live cart total for floating mobile bar
+  const totalCartItems = cart.reduce((total, item) => total + item.quantity, 0);
+  const totalCartPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
   // 1. Fetch store info on load
   useEffect(() => {
@@ -103,171 +111,234 @@ const CustomerHome = ({ addToCart }) => {
     setGpsError('');
   };
 
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    setAddedItemKey(product._id);
+    setTimeout(() => {
+      setAddedItemKey(null);
+    }, 800);
+  };
+
   const isStoreOpen = store?.isOpen ?? true;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-8 text-white shadow-md mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-xs">
-              Campus Hyperlocal Store
-            </span>
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-6 pb-24 md:pb-8">
+      {/* Mobile Location & Store Quick Header (Visible only on mobile) */}
+      <div className="lg:hidden flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 mb-3 border border-slate-200/80 shadow-xs">
+        <button
+          onClick={() => setShowLocationModal(true)}
+          className="flex items-center gap-1.5 text-left flex-grow min-w-0"
+        >
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <MapPin size={14} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Craving snacks or daily essentials?</h1>
-          <p className="text-green-50 opacity-90 mt-1.5 max-w-md">
-            Order directly from NearKart Store with instant campus delivery, live status verification, and secure OTP handovers.
-          </p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-sm flex gap-3 items-center">
-          <Compass className="animate-spin text-green-200 shrink-0" size={32} />
-          <div>
-            <p className="font-bold">Hyperlocal Campus Delivery</p>
-            <p className="text-xs text-green-150">Fast 10-15 min hostel delivery right to your door!</p>
+          <div className="truncate">
+            <div className="flex items-center gap-1">
+              <span className="text-2xs font-extrabold text-slate-800">Delivering to</span>
+              <span className="text-3xs text-emerald-700 font-bold uppercase">Change ▾</span>
+            </div>
+            <p className="text-3xs text-slate-500 truncate">
+              {clientCoords ? `${clientCoords.lat.toFixed(3)}, ${clientCoords.lng.toFixed(3)} (Active)` : 'Campus Central Zone'}
+            </p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setShowStoreInfoModal(true)}
+          className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg shrink-0 text-3xs font-bold text-slate-700"
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+          <span>{store?.name ? store.name.slice(0, 12) : 'Store'}</span>
+          <span className="text-slate-400">ℹ️</span>
+        </button>
+      </div>
+
+      {/* Hero Banner (Compact on mobile, expanded on desktop) */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 rounded-2xl p-4 sm:p-7 text-white shadow-card mb-4 sm:mb-6">
+        <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1 sm:space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-900/60 text-emerald-200 text-3xs sm:text-2xs font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-wider backdrop-blur-md">
+              <Sparkles size={11} className="text-amber-300" />
+              <span>Campus Hyperlocal Express</span>
+            </div>
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-white">
+              Instant Hostel Delivery in 10-15 Mins
+            </h1>
+            <p className="text-2xs sm:text-xs text-emerald-100/90 leading-relaxed line-clamp-2 sm:line-clamp-none">
+              Order fresh canteen snacks, beverages, stationery, and daily hostel essentials with verified OTP handover.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 text-3xs sm:text-2xs font-semibold text-emerald-100">
+              <span className="bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                ⚡ 10-15m
+              </span>
+              <span className="bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                🛡️ OTP Secured
+              </span>
+              <span className="bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                📍 Campus Geofence
+              </span>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-xs items-center gap-3 shrink-0">
+            <Compass className="animate-spin text-emerald-200" size={24} />
+            <div>
+              <p className="font-bold text-white text-xs">Live Campus Zone</p>
+              <p className="text-emerald-200 text-3xs font-medium">10-15 Min Express Delivery</p>
+            </div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-100 mb-6">
-          {error}
+        <div className="bg-rose-50 text-rose-700 px-3.5 py-2.5 rounded-xl border border-rose-200 mb-4 text-xs font-medium flex items-center gap-2">
+          <AlertCircle size={15} className="shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left column: Single Shop Showcase & Location Details */}
-        <div className="lg:col-span-1 space-y-4">
+      {/* Main Grid: On mobile, products come first! On desktop, 4-col with sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        {/* Desktop Sidebar (Hidden on mobile for fast shopping experience) */}
+        <div className="hidden lg:block lg:col-span-1 space-y-4">
           {/* Shop Highlight Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-5 space-y-4">
-            <div className="flex justify-between items-start">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 space-y-3.5">
+            <div className="flex justify-between items-start gap-2">
               <div>
-                <span className="text-3xs font-extrabold uppercase tracking-wider text-green-600">Official Store</span>
-                <h3 className="text-lg font-black text-gray-800 tracking-tight mt-0.5">
+                <span className="text-3xs font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                  Official Merchant
+                </span>
+                <h3 className="text-base font-extrabold text-slate-800 tracking-tight mt-1">
                   {store?.name || 'NearKart Store'}
                 </h3>
               </div>
               <span
-                className={`text-2xs font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                  isStoreOpen ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                className={`inline-flex items-center gap-1 text-2xs font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                  isStoreOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
                 }`}
               >
+                <span className={`w-1.5 h-1.5 rounded-full ${isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                 {isStoreOpen ? 'Open Now' : 'Closed'}
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 leading-relaxed">
-              {store?.description || 'Campus instant groceries, snacks, and daily essentials delivered in 10 minutes.'}
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {store?.description || 'Instant groceries, campus canteen snacks, cold drinks, and daily essentials.'}
             </p>
 
-            <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs font-semibold text-gray-600">
+            <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
               <div className="flex items-center gap-2">
-                <MapPin size={15} className="text-green-600 shrink-0" />
+                <MapPin size={14} className="text-emerald-600 shrink-0" />
                 <span className="truncate">{store?.location?.address || 'Campus Central Store, Delhi'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock size={15} className="text-green-600 shrink-0" />
+                <Clock size={14} className="text-emerald-600 shrink-0" />
                 <span>{store?.estimatedDeliveryTime || '10-15 Mins Delivery'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck size={15} className="text-green-600 shrink-0" />
+                <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
                 <span>Radius: {store?.deliveryRadius || 2} km Campus Zone</span>
               </div>
               <div className="flex items-center gap-2">
-                <Phone size={15} className="text-green-600 shrink-0" />
+                <Phone size={14} className="text-emerald-600 shrink-0" />
                 <span>Helpline: {store?.phone || '9876543211'}</span>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-1.5">
-              <span className="bg-gray-100 text-gray-700 text-3xs font-bold px-2 py-0.5 rounded">💵 COD Available</span>
-              <span className="bg-gray-100 text-gray-700 text-3xs font-bold px-2 py-0.5 rounded">💳 UPI / Online</span>
-              <span className="bg-green-50 text-green-700 text-3xs font-bold px-2 py-0.5 rounded">⚡ 10m Express</span>
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 text-3xs font-bold text-slate-600">
+              <span className="bg-slate-100 px-2 py-0.5 rounded">💵 COD Available</span>
+              <span className="bg-slate-100 px-2 py-0.5 rounded">💳 UPI / Online</span>
+              <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">⚡ 10m Express</span>
             </div>
           </div>
 
           {/* Delivery Location Status Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-4 space-y-3">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-4 space-y-2.5">
             <div className="flex justify-between items-center">
-              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <MapPin size={14} className="text-green-600" />
-                <span>Delivery Location</span>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                <MapPin size={14} className="text-emerald-600" />
+                <span>Delivery Spot</span>
               </h4>
               <button
                 onClick={() => setShowLocationModal(true)}
-                className="text-3xs text-green-600 hover:text-green-700 font-extrabold border border-green-200 hover:border-green-300 px-2 py-0.5 rounded-md bg-green-50/50 transition"
+                className="text-2xs text-emerald-700 hover:text-emerald-800 font-extrabold border border-emerald-200 hover:border-emerald-300 px-2 py-0.5 rounded-md bg-emerald-50/60 transition"
               >
                 Change
               </button>
             </div>
 
             {clientCoords ? (
-              <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-2xs space-y-1 font-semibold">
-                <div className="flex items-center gap-1 text-green-700 font-bold">
-                  <CheckCircle2 size={12} />
-                  <span>Coordinates Active</span>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-2xs space-y-1 font-medium">
+                <div className="flex items-center gap-1 text-emerald-700 font-bold">
+                  <CheckCircle2 size={13} />
+                  <span>Delivery Zone Active</span>
                 </div>
-                <p className="text-gray-500 font-mono text-3xs truncate">
+                <p className="text-slate-500 font-mono text-3xs truncate">
                   {clientCoords.lat.toFixed(4)}, {clientCoords.lng.toFixed(4)}
                 </p>
               </div>
             ) : (
-              <div className="text-2xs text-gray-500 space-y-2">
-                <p>Location not detected yet. Set location for accurate range verification.</p>
+              <div className="text-2xs text-slate-500 space-y-2">
+                <p>Location not detected yet. Set location for instant range verification.</p>
                 <button
                   onClick={handleUseGPS}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded-lg text-3xs transition shadow-2xs"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition shadow-xs"
                 >
-                  📡 Detect GPS
+                  📡 Detect My Location
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right column: Products Catalog */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Store header card & search */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row justify-between gap-4 md:items-center">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-black text-gray-800">{store?.name || 'NearKart Store'} Catalog</h2>
-                {!isStoreOpen && (
-                  <span className="flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-100 font-semibold">
-                    <AlertCircle size={14} />
-                    <span>Store Closed</span>
-                  </span>
-                )}
+        {/* Products Catalog Area: Full width on mobile, 3-cols on desktop */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Search bar & Store Status Header */}
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                  {store?.name || 'NearKart Store'}
+                </h2>
+                <p className="text-3xs sm:text-xs text-slate-400">
+                  {products.length} products available for campus delivery
+                </p>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Browse fresh inventory, canteen snacks, and daily essentials.
-              </p>
+              {!isStoreOpen && (
+                <span className="flex items-center gap-1 text-3xs bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200 font-bold shrink-0">
+                  <AlertCircle size={11} />
+                  <span>Closed</span>
+                </span>
+              )}
             </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full md:w-64">
-              <Search size={16} className="absolute left-3 top-3 text-gray-400" />
+            {/* Mobile-Friendly Search Bar */}
+            <div className="relative w-full sm:w-60">
+              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search snacks, drinks, food..."
+                placeholder="Search Maggi, chips, cold drinks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 bg-gray-50/50"
+                className="w-full pl-8 pr-3 py-1.5 sm:py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
               />
             </div>
           </div>
 
-          {/* Category Filter Pills */}
+          {/* Category Filter Pills (Horizontal Scrollable on mobile) */}
           {categories.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition border ${
+                  className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-2xs sm:text-xs font-semibold whitespace-nowrap transition border shrink-0 ${
                     selectedCategory === cat
-                      ? 'bg-green-600 text-white border-green-600 shadow-2xs'
-                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs font-bold'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   {cat}
@@ -276,82 +347,104 @@ const CustomerHome = ({ addToCart }) => {
             </div>
           )}
 
-          {/* Products list */}
+          {/* Products List: MINIMUM 2 PER ROW ON MOBILE (grid-cols-2) */}
           {loadingProducts ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
+                <div key={i} className="h-52 bg-slate-100 rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-              <p className="text-gray-400 text-sm font-semibold">No products found matching your selection.</p>
+            <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 p-6">
+              <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                <ShoppingCart size={18} />
+              </div>
+              <p className="text-slate-600 text-xs font-bold">No products found</p>
               <button
                 onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
-                className="mt-3 text-xs text-green-600 hover:text-green-700 font-bold"
+                className="mt-3 text-2xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg font-bold border border-emerald-200"
               >
                 Clear Filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
               {products.map((product) => {
                 const isOutOfStock = product.stock <= 0;
+                const isRecentlyAdded = addedItemKey === product._id;
+
                 return (
                   <div
                     key={product._id}
-                    className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition duration-200"
+                    className="group bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-card transition duration-200 overflow-hidden flex flex-col justify-between"
                   >
-                    <div className="relative h-44 bg-gray-50 overflow-hidden">
+                    {/* Compact Image Frame */}
+                    <div className="relative h-28 sm:h-36 md:h-40 bg-slate-50 overflow-hidden">
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300';
                         }}
                       />
                       {isOutOfStock && (
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
-                          <span className="text-white font-extrabold text-xs uppercase px-3 py-1 bg-red-600 rounded-md">
+                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-2xs flex items-center justify-center">
+                          <span className="text-white font-extrabold text-3xs uppercase px-2 py-0.5 bg-rose-600 rounded">
                             Out of Stock
                           </span>
                         </div>
                       )}
                       {!isOutOfStock && product.stock <= 5 && (
-                        <span className="absolute top-2 right-2 bg-amber-500 text-white text-3xs font-extrabold px-1.5 py-0.5 rounded shadow-sm">
-                          Only {product.stock} left!
+                        <span className="absolute top-1.5 right-1.5 bg-amber-500 text-white text-4xs sm:text-3xs font-extrabold px-1.5 py-0.5 rounded shadow-xs">
+                          {product.stock} left!
+                        </span>
+                      )}
+                      {product.offerPrice && product.offerPrice < product.price && (
+                        <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-4xs sm:text-3xs font-extrabold px-1.5 py-0.5 rounded shadow-xs">
+                          {Math.round(((product.price - product.offerPrice) / product.price) * 100)}% OFF
                         </span>
                       )}
                     </div>
 
-                    <div className="p-4 flex-grow flex flex-col justify-between">
+                    {/* Compact Details for 2-column mobile layout */}
+                    <div className="p-2.5 sm:p-3 flex-grow flex flex-col justify-between space-y-2">
                       <div>
-                        <span className="text-3xs font-extrabold tracking-wider uppercase text-green-600">
+                        <span className="text-4xs sm:text-3xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
                           {product.category || 'General'}
                         </span>
-                        <h4 className="font-bold text-gray-800 mt-0.5 line-clamp-1 text-sm">{product.name}</h4>
-                        <p className="text-xs text-gray-500 line-clamp-2 mt-1 leading-normal">{product.description}</p>
+                        <h4 className="font-bold text-slate-800 mt-1 line-clamp-1 text-xs sm:text-sm group-hover:text-emerald-700 transition">
+                          {product.name}
+                        </h4>
+                        <p className="text-3xs text-slate-400 line-clamp-1 mt-0.5">
+                          {product.description}
+                        </p>
                       </div>
 
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
+                      {/* Price and Add button */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 gap-1">
                         <div>
-                          <span className="text-base font-black text-gray-900">₹{product.price}</span>
-                          {product.offerPrice && product.offerPrice < product.price && (
-                            <span className="ml-1.5 text-xs text-gray-400 line-through">₹{product.price}</span>
-                          )}
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xs sm:text-base font-extrabold text-slate-900">₹{product.price}</span>
+                            {product.offerPrice && product.offerPrice < product.price && (
+                              <span className="text-3xs text-slate-400 line-through">₹{product.price}</span>
+                            )}
+                          </div>
                         </div>
+
                         <button
                           disabled={isOutOfStock || !isStoreOpen}
-                          onClick={() => addToCart(product)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          onClick={() => handleAddToCart(product)}
+                          className={`flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition active:scale-95 ${
                             isOutOfStock || !isStoreOpen
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-green-600 hover:bg-green-700 text-white shadow-xs active:scale-95'
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : isRecentlyAdded
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-600/20'
                           }`}
                         >
-                          <ShoppingCart size={14} />
-                          <span>Add to Cart</span>
+                          <ShoppingCart size={11} className="hidden sm:inline" />
+                          <span>{isRecentlyAdded ? '✓ Added' : '+ ADD'}</span>
                         </button>
                       </div>
                     </div>
@@ -363,47 +456,121 @@ const CustomerHome = ({ addToCart }) => {
         </div>
       </div>
 
+      {/* Floating Sticky Mobile Cart Bar (When Cart Has Items) */}
+      {totalCartItems > 0 && (
+        <div className="md:hidden fixed bottom-3 inset-x-3 z-40 animate-in slide-in-from-bottom duration-200">
+          <Link
+            to="/cart"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-3.5 shadow-hover flex items-center justify-between font-bold border border-emerald-500/30"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                <ShoppingCart size={16} />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-black">{totalCartItems} {totalCartItems === 1 ? 'Item' : 'Items'} • ₹{totalCartPrice}</p>
+                <p className="text-3xs text-emerald-100 font-medium">Extra ₹10 campus delivery fee included</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 text-xs bg-white text-emerald-800 px-3 py-1.5 rounded-xl shadow-xs">
+              <span>View Cart</span>
+              <ChevronRight size={14} />
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/* Location Modal */}
       {showLocationModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center space-y-4 border border-gray-100">
-            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 text-center space-y-3.5 border border-slate-100">
+            <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-lg">
               📍
             </div>
             <div className="space-y-1">
-              <h3 className="font-extrabold text-gray-800 text-base">Confirm Campus Location</h3>
-              <p className="text-gray-500 text-xs leading-relaxed">
-                NearKart provides campus delivery for NearKart Store. Share your location to verify delivery range.
+              <h3 className="font-extrabold text-slate-800 text-sm">Delivery Location</h3>
+              <p className="text-slate-500 text-xs">
+                NearKart verifies coordinates for instant campus hostel delivery.
               </p>
             </div>
 
             {gpsError && (
-              <div className="bg-red-50 text-red-800 border border-red-200 text-3xs p-3 rounded-lg text-left font-semibold">
+              <div className="bg-rose-50 text-rose-800 border border-rose-200 text-3xs p-2.5 rounded-xl text-left font-medium">
                 <p className="font-bold">⚠️ GPS Note: {gpsError}</p>
-                <p className="text-gray-500 font-medium mt-1">You can also use the default campus location below.</p>
+                <p className="text-slate-500 mt-0.5">You can use Campus Central Hub below.</p>
               </div>
             )}
 
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2 pt-1">
               <button
                 onClick={handleUseGPS}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs transition shadow-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-xs"
               >
-                📡 Use Live GPS Location
+                📡 Detect My Live GPS
               </button>
               <button
                 onClick={handleUseCampusDefault}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-xl text-xs transition"
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition"
               >
-                🏫 Use Campus Central Location
+                🏫 Campus Central Zone
               </button>
               <button
                 onClick={() => setShowLocationModal(false)}
-                className="w-full text-gray-400 hover:text-gray-600 font-semibold py-1 text-xs transition"
+                className="w-full text-slate-400 hover:text-slate-600 font-semibold py-1 text-xs"
               >
-                Close & Browse
+                Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Store Info Sheet Modal */}
+      {showStoreInfoModal && store && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-3 border border-slate-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-3xs font-extrabold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                  Official Merchant
+                </span>
+                <h3 className="text-base font-extrabold text-slate-800 mt-1">{store.name}</h3>
+              </div>
+              <span className={`text-3xs font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                isStoreOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              }`}>
+                {isStoreOpen ? 'Open Now' : 'Closed'}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">{store.description}</p>
+
+            <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <MapPin size={14} className="text-emerald-600 shrink-0" />
+                <span className="truncate">{store.location?.address}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-emerald-600 shrink-0" />
+                <span>{store.estimatedDeliveryTime || '10-15 Mins'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                <span>Delivery Radius: {store.deliveryRadius} km</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone size={14} className="text-emerald-600 shrink-0" />
+                <span>Helpline: {store.phone}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowStoreInfoModal(false)}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs mt-2"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

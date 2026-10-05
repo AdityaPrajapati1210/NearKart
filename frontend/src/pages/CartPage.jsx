@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Trash2, Plus, Minus, MapPin, Navigation, ShoppingBag, CreditCard, ShieldAlert } from 'lucide-react';
+import { Trash2, Plus, Minus, MapPin, Navigation, ShoppingBag, CreditCard, ShieldAlert, CheckCircle2, ArrowRight } from 'lucide-react';
 import { storeService } from '../services/storeService';
 import { orderService } from '../services/orderService';
 
@@ -68,7 +68,7 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
     fetchStoreSettings();
   }, [cart]);
 
-  // 2. Trigger automatic Geolocation request on mount ("Jo bole on your location")
+  // 2. Trigger automatic Geolocation request on mount
   useEffect(() => {
     if (navigator.geolocation) {
       setFetchingGps(true);
@@ -82,19 +82,19 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
           setCustomCollege('');
           setFetchingGps(false);
           setGpsError('');
-          setShowLocationModal(false); // Auto-dismiss popup on success
+          setShowLocationModal(false);
         },
         (err) => {
           let errorMsg = 'Failed to acquire location.';
           if (err.code === 1) {
-            errorMsg = 'Location permission denied by browser. If testing on localhost, click the padlock icon next to the URL bar and select "Allow Location". (Note: Modern browsers block GPS on insecure HTTP domains).';
+            errorMsg = 'Location permission denied. Click padlock icon next to URL bar to allow location access.';
           } else if (err.code === 2) {
-            errorMsg = 'Position unavailable. GPS hardware is offline or local Wi-Fi geolocation lookup failed.';
+            errorMsg = 'Position unavailable. GPS hardware is offline.';
           } else if (err.code === 3) {
             errorMsg = 'Location query timed out.';
           }
           setGpsError(errorMsg);
-          console.warn('Auto Geolocation declined/blocked on mount. Using default coordinates:', err.message);
+          console.warn('Auto Geolocation declined on mount. Using default coordinates:', err.message);
           setSelectedHub('admin');
           setFetchingGps(false);
         },
@@ -138,28 +138,28 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
 
     // A. Draw Canteen Marker
     const storeIcon = window.L.divIcon({
-      html: `<div class="w-7 h-7 bg-green-600 border-2 border-white rounded-full flex items-center justify-center text-xs shadow-md">🏪</div>`,
+      html: `<div class="w-8 h-8 bg-emerald-600 border-2 border-white rounded-full flex items-center justify-center text-xs shadow-md">🏪</div>`,
       className: '',
-      iconSize: [28, 28],
+      iconSize: [32, 32],
     });
     window.L.marker([storeLat, storeLng], { icon: storeIcon })
       .addTo(mapRef.current)
-      .bindPopup(`<b>${storeDetails.name}</b><br/>Shop Base Coordinates`)
+      .bindPopup(`<b>${storeDetails.name}</b><br/>Campus Base Store`)
       .openPopup();
 
     // B. Draw Store Delivery coverage boundary Circle
     window.L.circle([storeLat, storeLng], {
-      color: '#22c55e',
-      fillColor: '#86e4a4',
+      color: '#059669',
+      fillColor: '#10b981',
       fillOpacity: 0.15,
       radius: radiusMeters,
     }).addTo(mapRef.current);
 
     // C. Draw Draggable Client Pin
     const clientIcon = window.L.divIcon({
-      html: `<div class="w-7 h-7 bg-blue-600 border-2 border-white rounded-full flex items-center justify-center text-xs shadow-md animate-bounce">📍</div>`,
+      html: `<div class="w-8 h-8 bg-blue-600 border-2 border-white rounded-full flex items-center justify-center text-xs shadow-md animate-bounce">📍</div>`,
       className: '',
-      iconSize: [28, 28],
+      iconSize: [32, 32],
     });
     
     const marker = window.L.marker([coordinates.lat, coordinates.lng], {
@@ -179,14 +179,12 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
 
     clientMarkerRef.current = marker;
 
-    // Recalculate leaflet map sizes
     setTimeout(() => {
       if (mapRef.current) {
         mapRef.current.invalidateSize();
       }
     }, 250);
 
-    // Cleanup on unmount or storeDetails changes
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -242,9 +240,9 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
       (err) => {
         let errorMsg = 'Failed to acquire location.';
         if (err.code === 1) {
-          errorMsg = 'Location permission denied by browser. If testing on localhost, click the padlock icon next to the URL bar and select "Allow Location". (Note: Modern browsers block GPS on insecure HTTP domains).';
+          errorMsg = 'Location permission denied by browser. Click padlock icon next to URL bar to allow location access.';
         } else if (err.code === 2) {
-          errorMsg = 'Position unavailable. GPS hardware is offline or local Wi-Fi geolocation lookup failed.';
+          errorMsg = 'Position unavailable. GPS hardware is offline.';
         } else if (err.code === 3) {
           errorMsg = 'Location query timed out.';
         }
@@ -334,12 +332,19 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
   if (cart.length === 0) {
     return (
       <div className="max-w-md mx-auto text-center py-20 px-4">
-        <div className="bg-white p-8 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center">
-          <ShoppingBag size={48} className="text-gray-300 mb-3" />
-          <h2 className="text-xl font-bold text-gray-800">Your Cart is Empty</h2>
-          <p className="text-gray-400 text-sm mt-1 mb-6">Explore the campus store directory to add snacks to your cart.</p>
-          <Link to="/" className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            Browse Products
+        <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-card flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-3">
+            <ShoppingBag size={32} />
+          </div>
+          <h2 className="text-lg font-extrabold text-slate-800">Your Cart is Empty</h2>
+          <p className="text-slate-400 text-xs mt-1 mb-6 leading-relaxed">
+            Looks like you haven't added anything to your cart yet. Explore campus snacks, instant beverages, and daily items.
+          </p>
+          <Link
+            to="/"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs shadow-emerald-600/20"
+          >
+            Explore Store Catalog
           </Link>
         </div>
       </div>
@@ -347,50 +352,54 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight mb-8">Checkout Shopping Cart</h1>
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      {/* Header */}
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight">Checkout Order</h1>
+        <p className="text-2xs sm:text-xs text-slate-500 mt-0.5">Review items, verify delivery hotspot, and confirm order.</p>
+      </div>
 
       {isStoreClosed && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-150 mb-6 flex items-start gap-2.5">
-          <ShieldAlert className="shrink-0 mt-0.5" size={18} />
+        <div className="bg-rose-50 text-rose-700 px-4 py-3 rounded-xl border border-rose-200 mb-6 flex items-start gap-2.5">
+          <ShieldAlert className="shrink-0 mt-0.5 text-rose-600" size={16} />
           <div>
-            <p className="text-sm font-bold">Store Closed</p>
-            <p className="text-xs mt-0.5">This store is temporarily closed and not accepting orders. Please check back later.</p>
+            <p className="text-xs font-bold">Store Closed</p>
+            <p className="text-2xs mt-0.5">This store is temporarily closed and not accepting orders. Please check back shortly.</p>
           </div>
         </div>
       )}
 
       {isOutOfRange && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-150 mb-6 flex items-start gap-2.5">
-          <ShieldAlert className="shrink-0 mt-0.5 animate-pulse" size={18} />
+        <div className="bg-rose-50 text-rose-700 px-4 py-3 rounded-xl border border-rose-200 mb-6 flex items-start gap-2.5">
+          <ShieldAlert className="shrink-0 mt-0.5 text-rose-600 animate-pulse" size={16} />
           <div>
-            <p className="text-sm font-bold">Location Out of Bounds</p>
-            <p className="text-xs mt-0.5">
-              You are **{currentDistance.toFixed(2)} km** away. The store circle radius is limited to **{storeDetails?.deliveryRadius} km**. Drag your pin closer or select a preset inside the circle!
+            <p className="text-xs font-bold">Location Out of Campus Delivery Zone</p>
+            <p className="text-2xs mt-0.5">
+              You are currently <span className="font-extrabold">{currentDistance.toFixed(2)} km</span> away. The campus store delivery zone is limited to <span className="font-extrabold">{storeDetails?.deliveryRadius} km</span>. Drag your location pin or select a campus preset block below.
             </p>
           </div>
         </div>
       )}
 
       {isMinimumNotMet && (
-        <div className="bg-amber-50 text-amber-800 px-4 py-3 rounded-lg border border-amber-200 mb-6 flex items-start gap-2.5">
-          <ShieldAlert className="shrink-0 mt-0.5 text-amber-600" size={18} />
+        <div className="bg-amber-50 text-amber-800 px-4 py-3 rounded-xl border border-amber-200 mb-6 flex items-start gap-2.5">
+          <ShieldAlert className="shrink-0 mt-0.5 text-amber-600" size={16} />
           <div>
-            <p className="text-sm font-bold">Minimum Order Limit Not Met</p>
-            <p className="text-xs mt-0.5">
-              The store requires a minimum order of **₹{storeMinimumOrder}**. You need to add **₹{storeMinimumOrder - subtotal}** more to place this order.
+            <p className="text-xs font-bold">Minimum Order Limit</p>
+            <p className="text-2xs mt-0.5">
+              This store requires a minimum order of <span className="font-bold">₹{storeMinimumOrder}</span>. Please add <span className="font-bold">₹{storeMinimumOrder - subtotal}</span> more items to proceed.
             </p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-150 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+        <div className="bg-rose-50 text-rose-700 px-4 py-3 rounded-xl border border-rose-200 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <ShieldAlert className="shrink-0 mt-0.5" size={18} />
+            <ShieldAlert className="shrink-0 mt-0.5 text-rose-600" size={16} />
             <div>
-              <p className="text-sm font-bold">Checkout Error</p>
-              <p className="text-xs mt-0.5">{error}</p>
+              <p className="text-xs font-bold">Checkout Notice</p>
+              <p className="text-2xs mt-0.5">{error}</p>
             </div>
           </div>
           {error.includes('Outdated Cart Store') && (
@@ -399,73 +408,79 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                 clearCart();
                 setError('');
               }}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shrink-0"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shrink-0"
             >
-              Reset / Clear Cart
+              Reset Cart
             </button>
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left side: Cart Items & Live Map */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-xs overflow-hidden">
-            <div className="bg-gray-50/50 px-5 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="font-bold text-gray-700 text-sm">Order Items</h3>
+          {/* Order items card */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+            <div className="bg-slate-50/80 px-5 py-3 border-b border-slate-200/60 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                Order Items ({cart.length})
+              </h3>
               {storeDetails && (
-                <span className="text-2xs text-gray-400 font-bold uppercase tracking-wider">
+                <span className="text-2xs text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
                   Store: {storeDetails.name}
                 </span>
               )}
             </div>
-            <div className="divide-y divide-gray-100">
+
+            <div className="divide-y divide-slate-100">
               {cart.map((item) => (
-                <div key={item._id} className="p-5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
+                <div key={item._id} className="p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-4">
+                  <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg bg-gray-55 border border-gray-100"
+                      className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl bg-slate-50 border border-slate-100 shrink-0"
                     />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-gray-800 text-sm">{item.name}</h4>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-1">{item.name}</h4>
                         {item.discount > 0 && (
-                          <span className="bg-red-50 text-red-655 font-extrabold text-xxs px-1.5 py-0.5 rounded">
+                          <span className="bg-rose-50 text-rose-700 font-extrabold text-3xs px-1.5 py-0.2 rounded">
                             {item.discount}% OFF
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 capitalize">{item.category}</p>
-                      <p className="text-sm font-black text-green-600 mt-1">₹{item.price}</p>
+                      <p className="text-3xs text-slate-400 capitalize">{item.category}</p>
+                      <p className="text-xs sm:text-sm font-extrabold text-emerald-700 mt-0.5">₹{item.price}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                    {/* Stepper */}
+                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
                       <button
                         onClick={() => updateQuantity(item._id, item.quantity - 1, item.stock)}
-                        className="p-1.5 hover:bg-gray-50 text-gray-500 transition"
+                        className="p-1 sm:p-1.5 hover:bg-slate-200 text-slate-600 transition"
                       >
-                        <Minus size={14} />
+                        <Minus size={12} />
                       </button>
-                      <span className="px-3 text-sm font-semibold text-gray-700 w-8 text-center bg-gray-50/20">
+                      <span className="px-2 text-xs font-bold text-slate-800 w-6 text-center">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateQuantity(item._id, item.quantity + 1, item.stock)}
-                        className="p-1.5 hover:bg-gray-50 text-gray-500 transition"
+                        className="p-1 sm:p-1.5 hover:bg-slate-200 text-slate-600 transition"
                       >
-                        <Plus size={14} />
+                        <Plus size={12} />
                       </button>
                     </div>
+
                     <button
                       onClick={() => removeFromCart(item._id)}
-                      className="text-gray-400 hover:text-red-550 p-1.5 transition"
+                      className="text-slate-400 hover:text-rose-600 p-1 sm:p-1.5 transition"
                       title="Remove item"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
@@ -474,87 +489,82 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
           </div>
 
           {/* Interactive Leaflet Map Wrapper */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5 space-y-4">
-            <h3 className="font-bold text-gray-800 text-sm flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <MapPin size={18} className="text-green-600" />
-                <span>Geospatial Coverage Circle</span>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                <MapPin size={16} className="text-emerald-600" />
+                <span>Campus Geofence Coverage</span>
+              </h3>
+              <span className={`text-2xs font-extrabold px-2.5 py-0.5 rounded-full border ${
+                isOutOfRange ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                Distance: {currentDistance.toFixed(2)} km {isOutOfRange ? '(Out of Range)' : '(In Zone)'}
               </span>
-              <span className={`text-xxs font-extrabold px-2 py-0.5 rounded-full ${isOutOfRange ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-                Distance: {currentDistance.toFixed(2)} km
-              </span>
-            </h3>
+            </div>
 
             {/* Map Canvas div */}
-            <div id="checkout-map" className="w-full h-80 rounded-xl bg-gray-100 border border-gray-250 z-10" />
+            <div id="checkout-map" className="w-full h-56 sm:h-72 rounded-xl bg-slate-100 border border-slate-200 z-10" />
 
             {gpsError && (
-              <div className="bg-amber-50 text-amber-800 border border-amber-200 text-xxs p-3 rounded-lg leading-relaxed font-semibold">
-                ⚠️ Browser GPS Block: {gpsError}
+              <div className="bg-amber-50 text-amber-800 border border-amber-200 text-2xs p-3 rounded-xl font-medium">
+                ⚠️ Browser GPS Note: {gpsError}
               </div>
             )}
 
             <div className="space-y-4">
-              <div className="flex justify-center pt-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                 <button
                   type="button"
                   onClick={handleGetGpsLocation}
                   disabled={fetchingGps}
-                  className="flex items-center gap-2 border border-green-500 hover:bg-green-50 text-green-700 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-xxs"
+                  className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs"
                 >
-                  <Navigation size={14} className={fetchingGps ? 'animate-bounce' : ''} />
-                  <span>{fetchingGps ? 'Querying GPS...' : 'Get Current GPS Location'}</span>
+                  <Navigation size={13} className={fetchingGps ? 'animate-bounce' : ''} />
+                  <span>{fetchingGps ? 'Detecting GPS...' : 'Auto-Detect My GPS Location'}</span>
                 </button>
-              </div>
 
-              <div className="grid grid-cols-3 gap-4 text-xxs text-gray-500 bg-gray-55 p-2.5 rounded-lg border border-gray-100 font-semibold">
-                <div>
-                  <span className="font-extrabold">Lat:</span> {coordinates.lat.toFixed(5)}
-                </div>
-                <div>
-                  <span className="font-extrabold">Lng:</span> {coordinates.lng.toFixed(5)}
-                </div>
-                <div className="text-right">
-                  <span className="font-extrabold">Max Limit:</span> {storeDetails?.deliveryRadius} km
+                <div className="text-3xs text-slate-500 font-mono">
+                  Coordinates: {coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}
                 </div>
               </div>
 
-              <div className="border-t border-gray-100 pt-4 space-y-3">
-                <p className="font-bold text-xs text-gray-700">Delivery Address Details</p>
-                <div className="space-y-4">
+              {/* Delivery Address Details */}
+              <div className="border-t border-slate-100 pt-4 space-y-3">
+                <p className="font-bold text-xs text-slate-700 uppercase tracking-wide">Campus Hostel / Location Spot</p>
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-3xs font-bold text-gray-400 uppercase tracking-wide mb-1">Select College</label>
+                    <label className="block text-2xs font-semibold text-slate-500 mb-1">Select Campus Block or Preset</label>
                     <select
                       value={collegeSelection}
                       onChange={(e) => setCollegeSelection(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg text-xs p-2.5 bg-white focus:outline-none focus:border-green-500 font-semibold"
+                      className="w-full border border-slate-200 rounded-xl text-xs p-2.5 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold"
                     >
-                      <option value="College A">College A</option>
-                      <option value="College B">College B</option>
-                      <option value="College C">College C</option>
-                      <option value="Other">Other (Type custom college/location)</option>
+                      <option value="College A">Campus A - Academic Block</option>
+                      <option value="College B">Campus B - Boys Hostel Quad</option>
+                      <option value="College C">Campus C - Girls Hostel Quad</option>
+                      <option value="Other">Other (Custom Room / Hostel Name)</option>
                     </select>
                   </div>
 
                   {collegeSelection === 'Other' && (
                     <div>
-                      <label className="block text-3xs font-bold text-gray-400 uppercase tracking-wide mb-1">Type Location Name</label>
+                      <label className="block text-2xs font-semibold text-slate-500 mb-1">Enter Exact Room / Location Description</label>
                       <input
                         type="text"
                         required
                         name="custom-delivery-address"
                         autoComplete="off"
-                        placeholder="enter your location"
+                        placeholder="e.g. Block 4, Room 302, North Hostel"
                         value={customCollege}
                         onChange={(e) => setCustomCollege(e.target.value)}
-                        className="w-full border border-gray-250 rounded-lg text-xs p-2.5 focus:outline-none focus:border-green-500 bg-white font-semibold"
+                        className="w-full border border-slate-200 rounded-xl text-xs p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 font-semibold"
                       />
                     </div>
                   )}
 
-                  <div className="bg-green-50/30 p-3 rounded-lg border border-green-100 text-xxs text-green-800 leading-normal font-semibold">
-                    <span className="font-extrabold text-green-700 block mb-0.5">Selected College Location:</span>
-                    {collegeSelection === 'Other' ? (customCollege || 'No custom name typed yet') : collegeSelection}
+                  <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 text-2xs text-emerald-800 leading-relaxed font-medium">
+                    <span className="font-extrabold text-emerald-800 block mb-0.5">Destination Tag:</span>
+                    {collegeSelection === 'Other' ? (customCollege || 'Please specify custom room name above') : collegeSelection}
                   </div>
                 </div>
               </div>
@@ -565,10 +575,10 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
         {/* Right side: Payment & Summary */}
         <div className="space-y-6">
           {/* Payment Option */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5 space-y-4 font-semibold">
-            <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-              <CreditCard size={18} className="text-green-600" />
-              <span>Select Payment Mode</span>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 space-y-3.5">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+              <CreditCard size={16} className="text-emerald-600" />
+              <span>Payment Mode</span>
             </h3>
 
             <div className="grid grid-cols-2 gap-3">
@@ -576,13 +586,13 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                 type="button"
                 disabled={storeDetails && !storeDetails.codEnabled}
                 onClick={() => setPaymentMethod('COD')}
-                className={`p-3 rounded-lg border font-semibold text-xs flex flex-col gap-1 items-center transition ${
+                className={`p-3 rounded-xl border font-bold text-xs flex flex-col gap-1 items-center transition ${
                   paymentMethod === 'COD'
-                    ? 'border-green-600 bg-green-50/20 text-green-700'
-                    : 'border-gray-200 hover:bg-gray-55 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed'
+                    ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 shadow-xs'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed'
                 }`}
               >
-                <span className="text-sm">💵</span>
+                <span className="text-base">💵</span>
                 <span>Cash on Delivery</span>
               </button>
 
@@ -590,92 +600,111 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                 type="button"
                 disabled={storeDetails && !storeDetails.onlinePaymentEnabled}
                 onClick={() => setPaymentMethod('ONLINE')}
-                className={`p-3 rounded-lg border font-semibold text-xs flex flex-col gap-1 items-center transition ${
+                className={`p-3 rounded-xl border font-bold text-xs flex flex-col gap-1 items-center transition ${
                   paymentMethod === 'ONLINE'
-                    ? 'border-green-600 bg-green-50/20 text-green-700'
-                    : 'border-gray-200 hover:bg-gray-55 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed'
+                    ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 shadow-xs'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed'
                 }`}
               >
-                <span className="text-sm">💳</span>
-                <span>Simulated Online</span>
+                <span className="text-base">💳</span>
+                <span>Simulated UPI</span>
               </button>
             </div>
             
             {storeDetails && !storeDetails.codEnabled && (
-              <p className="text-3xs text-red-500 font-semibold bg-red-50/40 p-1.5 rounded text-center">
-                ⚠️ Cash on Delivery is disabled by this store.
+              <p className="text-3xs text-rose-600 font-semibold bg-rose-50 p-2 rounded-lg text-center">
+                ⚠️ Cash on Delivery disabled by store.
               </p>
             )}
             {storeDetails && !storeDetails.onlinePaymentEnabled && (
-              <p className="text-3xs text-red-500 font-semibold bg-red-50/40 p-1.5 rounded text-center">
-                ⚠️ Online Payment is disabled by this store.
+              <p className="text-3xs text-rose-600 font-semibold bg-rose-50 p-2 rounded-lg text-center">
+                ⚠️ Online Payment disabled by store.
               </p>
             )}
           </div>
 
           {/* Pricing summary */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-xs p-5 space-y-4">
-            <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2">Order Summary</h3>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5 space-y-4">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider border-b border-slate-100 pb-2.5">
+              Bill Details
+            </h3>
 
-            <div className="space-y-2.5 text-sm text-gray-600 font-semibold">
+            <div className="space-y-2.5 text-xs text-slate-600 font-medium">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
-                <span>₹{subtotal}</span>
+                <span className="font-bold text-slate-800">₹{subtotal}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>Delivery Charge</span>
-                <span>{deliveryFee === 0 ? <span className="text-green-600 font-bold">FREE</span> : `₹${deliveryFee}`}</span>
+                <span>
+                  {deliveryFee === 0 ? (
+                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded text-3xs">
+                      FREE
+                    </span>
+                  ) : (
+                    <span className="font-bold text-slate-800">₹{deliveryFee}</span>
+                  )}
+                </span>
               </div>
+
               {subtotal <= 300 && (
-                <p className="text-3xs text-gray-400 font-medium">💡 Tip: Add ₹{300 - subtotal} more for free delivery.</p>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-3xs text-slate-500 font-medium">
+                  💡 Add ₹{300 - subtotal} more for <span className="text-emerald-700 font-bold">FREE Delivery</span>!
+                </div>
               )}
-              <div className="flex justify-between border-t border-gray-100 pt-3 text-base font-extrabold text-gray-800">
-                <span>Grand Total</span>
-                <span className="text-green-600">₹{total}</span>
+
+              <div className="flex justify-between border-t border-slate-100 pt-3 text-sm font-extrabold text-slate-900">
+                <span>To Pay</span>
+                <span className="text-emerald-700 text-base">₹{total}</span>
               </div>
             </div>
 
             <button
               onClick={handleCheckout}
               disabled={loading || isMinimumNotMet || isStoreClosed || isOutOfRange}
-              className={`w-full text-white font-extrabold py-3 rounded-xl text-sm transition shadow-sm ${
+              className={`w-full font-bold py-3 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-2 ${
                 loading || isMinimumNotMet || isStoreClosed || isOutOfRange
-                  ? 'bg-gray-300 text-gray-400 cursor-not-allowed shadow-none'
-                  : 'bg-green-600 hover:bg-green-700'
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-98'
               }`}
             >
-              {loading ? 'Processing Order...' : 'Confirm & Place Order'}
+              <span>{loading ? 'Processing Order...' : 'Confirm & Place Order'}</span>
+              <ArrowRight size={14} />
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Location Modal */}
       {showLocationModal && (
-        <div className="fixed inset-0 bg-black/55 z-50 flex items-center justify-center p-4 backdrop-blur-xxs">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm border border-gray-100 overflow-hidden p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl animate-bounce">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-100 p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl">
               📍
             </div>
             <div className="space-y-1">
-              <h3 className="font-extrabold text-gray-805 text-base">Enable Location Access</h3>
-              <p className="text-gray-400 text-xs leading-relaxed font-semibold">
-                SPG Canteen is a hyperlocal store. We need your coordinates to verify delivery range to your college hostel room.
+              <h3 className="font-extrabold text-slate-800 text-base">Enable Location Access</h3>
+              <p className="text-slate-500 text-xs leading-relaxed">
+                NearKart needs your campus coordinates to verify range to your hostel room.
               </p>
             </div>
 
             {gpsError ? (
-              <div className="bg-amber-50 text-amber-800 border border-amber-200 text-3xs p-3 rounded-lg leading-relaxed text-left font-semibold space-y-1">
+              <div className="bg-rose-50 text-rose-800 border border-rose-200 text-2xs p-3 rounded-xl text-left font-medium">
                 <p className="font-bold">⚠️ GPS Blocked: {gpsError}</p>
-                <p className="text-gray-500 font-medium">To fix: Click the padlock icon 🔒 next to URL bar, set Location to "Allow", and reload page.</p>
+                <p className="text-slate-500 mt-1">Click the browser padlock 🔒 icon next to URL bar, set Location to "Allow", or use campus presets.</p>
               </div>
             ) : (
-              <p className="text-xxs text-green-700 font-bold">
-                Please click "Allow Location" on the browser popup that appears.
+              <p className="text-2xs text-emerald-700 font-semibold">
+                Please click "Allow Location" on the browser prompt.
               </p>
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setShowLocationModal(false)}
-                className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2 rounded-lg text-xs font-bold transition"
+                className="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 py-2.5 rounded-xl text-xs font-bold transition"
               >
                 Use Presets
               </button>
@@ -699,9 +728,9 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                     (err) => {
                       let errorMsg = 'Access Denied.';
                       if (err.code === 1) {
-                        errorMsg = 'Location permission denied by browser. If testing on localhost, click the padlock/settings icon on URL bar and allow location access.';
+                        errorMsg = 'Location permission denied by browser.';
                       } else if (err.code === 2) {
-                        errorMsg = 'Position unavailable. GPS or Wi-Fi location services are offline.';
+                        errorMsg = 'Position unavailable.';
                       } else if (err.code === 3) {
                         errorMsg = 'Lookup timed out.';
                       }
@@ -710,7 +739,7 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                     { enableHighAccuracy: true, timeout: 5000 }
                   );
                 }}
-                className="flex-grow bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-sm"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-xs shadow-emerald-600/20"
               >
                 Allow GPS
               </button>
@@ -718,8 +747,6 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
           </div>
         </div>
       )}
-        </div>
-      </div>
     </div>
   );
 };

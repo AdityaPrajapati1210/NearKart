@@ -3,7 +3,35 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply min-h-screen flex flex-col;
+  html {
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
+
+  body {
+    @apply min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased;
+  }
+
+  /* Make form inputs and buttons feel consistent and modern */
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

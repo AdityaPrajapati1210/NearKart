@@ -81,78 +81,118 @@ const AppContent = () => {
     (user && user.role === 'delivery');
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800">
       {!isBusinessPortal && (
-        <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
+        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs sticky top-0 z-50 transition-all">
           <div className="max-w-6xl mx-auto px-4">
-            <div className="flex justify-between h-16 items-center">
-              {/* Logo */}
-              <Link to="/" className="flex items-center space-x-2">
-                <span className="text-2xl font-extrabold text-green-600 tracking-tight">Near</span>
-                <span className="text-2xl font-extrabold text-gray-800 tracking-tight">Kart</span>
-                <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">Hyperlocal</span>
-              </Link>
+            <div className="flex justify-between h-16 items-center gap-4">
+              {/* Logo & Campus Tag */}
+              <div className="flex items-center gap-3">
+                <Link to="/" className="flex items-center gap-2 group">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-sm shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                    <ShoppingCart size={18} className="stroke-[2.5]" />
+                  </div>
+                  <div className="flex items-baseline">
+                    <span className="text-xl font-extrabold text-slate-900 tracking-tight group-hover:text-emerald-700 transition">Near</span>
+                    <span className="text-xl font-extrabold text-emerald-600 tracking-tight">Kart</span>
+                  </div>
+                </Link>
+                <span className="hidden sm:inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-2xs font-bold px-2 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Campus Express
+                </span>
+              </div>
 
               {/* Navigation items */}
-              <div className="flex items-center space-x-6">
-                <Link to="/" className="text-gray-600 hover:text-green-600 font-medium">Store</Link>
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <Link
+                  to="/"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    location.pathname === '/' ? 'text-emerald-700 bg-emerald-50/80 font-bold' : 'text-slate-600 hover:text-emerald-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Store
+                </Link>
+
                 {user && user.role !== 'delivery' && (
-                  <Link to="/orders" className="text-gray-600 hover:text-green-600 font-medium flex items-center gap-1">
-                    <Package size={18} />
+                  <Link
+                    to="/orders"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                      location.pathname === '/orders' ? 'text-emerald-700 bg-emerald-50/80 font-bold' : 'text-slate-600 hover:text-emerald-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Package size={15} />
                     <span>My Orders</span>
                   </Link>
                 )}
 
                 {/* Cart link */}
-                <Link to="/cart" className="relative p-2 text-gray-600 hover:text-green-600">
-                  <ShoppingCart size={22} />
-                  {totalCartItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold">
+                <Link
+                  to="/cart"
+                  className="relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-200 transition shadow-2xs"
+                >
+                  <ShoppingCart size={16} className="text-emerald-600" />
+                  <span className="hidden sm:inline">Cart</span>
+                  {totalCartItems > 0 ? (
+                    <span className="bg-emerald-600 text-white rounded-full text-3xs font-extrabold px-1.5 py-0.2 min-w-4 text-center">
                       {totalCartItems}
                     </span>
+                  ) : (
+                    <span className="text-slate-400 text-2xs font-normal">0</span>
                   )}
                 </Link>
 
                 {/* Auth section */}
                 {user ? (
-                  <div className="flex items-center space-x-4">
-                    <div className="hidden sm:flex flex-col items-end text-xs">
-                      <span className="font-semibold text-gray-700">{user.name}</span>
-                      <span className="text-gray-400 capitalize">{user.role}</span>
+                  <div className="flex items-center space-x-2 sm:space-x-3 pl-1 sm:pl-2 border-l border-slate-200">
+                    <div className="hidden md:flex flex-col items-end text-right">
+                      <span className="font-bold text-xs text-slate-800 leading-tight">{user.name}</span>
+                      <span className="text-3xs text-emerald-700 font-semibold uppercase tracking-wider">{user.role}</span>
                     </div>
+
                     {user.role === 'shopkeeper' && (
-                      <Link to="/shopkeeper/dashboard" className="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-green-100 flex items-center gap-1">
-                        <StoreIcon size={16} />
-                        <span>Store Portal</span>
+                      <Link
+                        to="/shopkeeper/dashboard"
+                        className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-2xs"
+                      >
+                        <StoreIcon size={14} />
+                        <span className="hidden sm:inline">Store Desk</span>
                       </Link>
                     )}
                     {user.role === 'admin' && (
-                      <Link to="/admin" className="bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-amber-100 flex items-center gap-1">
-                        <ShieldAlert size={16} />
-                        <span>Admin Panel</span>
+                      <Link
+                        to="/admin"
+                        className="bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-2xs"
+                      >
+                        <ShieldAlert size={14} />
+                        <span className="hidden sm:inline">Admin Panel</span>
                       </Link>
                     )}
                     {user.role === 'delivery' && (
-                      <Link to="/delivery/dashboard" className="bg-red-50 text-red-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 flex items-center gap-1">
-                        <Package size={16} />
-                        <span>Rider Console</span>
+                      <Link
+                        to="/delivery/dashboard"
+                        className="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-2xs"
+                      >
+                        <Package size={14} />
+                        <span className="hidden sm:inline">Rider Console</span>
                       </Link>
                     )}
+
                     <button
                       onClick={() => {
                         logout();
                         navigate('/');
                       }}
-                      className="text-gray-500 hover:text-red-500 p-2"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                       title="Logout"
                     >
-                      <LogOut size={20} />
+                      <LogOut size={16} />
                     </button>
                   </div>
                 ) : (
                   <Link
                     to="/login"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                    className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-xs shadow-emerald-600/20"
                   >
                     Login
                   </Link>
@@ -160,14 +200,14 @@ const AppContent = () => {
               </div>
             </div>
           </div>
-        </nav>
+        </header>
       )}
 
       {/* Main Page Content */}
       <main className="flex-grow">
         <Routes>
           {/* Customer paths */}
-          <Route path="/" element={<CustomerHome addToCart={addToCart} />} />
+          <Route path="/" element={<CustomerHome addToCart={addToCart} cart={cart} />} />
           <Route path="/login" element={<CustomerAuth />} />
           <Route path="/register" element={<CustomerAuth />} />
           <Route
@@ -197,20 +237,59 @@ const AppContent = () => {
         </Routes>
       </main>
 
-      {/* Footer */}
+      {/* Modern E-commerce Footer */}
       {!isBusinessPortal && (
-        <footer className="bg-gray-900 text-gray-400 py-8 border-t border-gray-800">
-          <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-            <div>
-              <p className="font-bold text-white text-lg">NearKart</p>
-              <p className="text-xs text-gray-500 mt-1">Campus Hyperlocal Delivery System. Real-time, location-validated ordering.</p>
+        <footer className="bg-slate-900 text-slate-400 pt-10 pb-8 border-t border-slate-800 text-xs">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              <div className="md:col-span-2 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">
+                    NK
+                  </div>
+                  <span className="text-base font-extrabold text-white tracking-tight">NearKart Express</span>
+                </div>
+                <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+                  Campus-exclusive hyperlocal ordering ecosystem. Geofence-verified live delivery from campus canteen directly to student hostels.
+                </p>
+                <div className="flex items-center gap-3 text-2xs text-slate-400 pt-1">
+                  <span className="inline-flex items-center gap-1 text-emerald-400">⚡ 10-15 min dispatch</span>
+                  <span>•</span>
+                  <span>🔒 OTP-secured handover</span>
+                  <span>•</span>
+                  <span>📍 Campus zoned</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-bold text-slate-200 uppercase tracking-wider text-2xs">Quick Links</p>
+                <ul className="space-y-1.5 text-xs">
+                  <li><Link to="/" className="hover:text-emerald-400 transition">Store Catalog</Link></li>
+                  <li><Link to="/orders" className="hover:text-emerald-400 transition">Order Tracking</Link></li>
+                  <li><Link to="/cart" className="hover:text-emerald-400 transition">View Shopping Cart</Link></li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-bold text-slate-200 uppercase tracking-wider text-2xs">Portals</p>
+                <ul className="space-y-1.5 text-xs">
+                  <li><Link to="/shopkeeper/login" className="hover:text-emerald-400 transition font-semibold text-emerald-400">Merchant Store Desk</Link></li>
+                  <li><Link to="/delivery/dashboard" className="hover:text-emerald-400 transition">Delivery Console</Link></li>
+                  <li><Link to="/admin" className="hover:text-emerald-400 transition">System Admin Panel</Link></li>
+                </ul>
+              </div>
             </div>
-            <div className="flex space-x-6 text-sm">
-              <Link to="/" className="hover:text-white">Store Directory</Link>
-              <Link to="/shopkeeper/login" className="hover:text-white font-semibold text-green-400">Shopkeeper Login</Link>
-              <Link to="/admin" className="hover:text-white">Admin Panel</Link>
+
+            <div className="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-2xs text-slate-500">
+              <p>&copy; {new Date().getFullYear()} NearKart Hyperlocal Inc. Built for college campuses.</p>
+              <div className="flex gap-4">
+                <span>Fast Dispatch</span>
+                <span>•</span>
+                <span>Verified Freshness</span>
+                <span>•</span>
+                <span>Student Friendly Pricing</span>
+              </div>
             </div>
-            <p className="text-xs text-gray-600">&copy; {new Date().getFullYear()} NearKart. All rights reserved.</p>
           </div>
         </footer>
       )}

@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Lock, Mail, Phone, User, KeyRound, Info } from 'lucide-react';
+import { Lock, Mail, Phone, User, KeyRound, Info, ShoppingCart, ArrowRight } from 'lucide-react';
 
 const CustomerAuth = () => {
   const { login, register, user, error: authError } = useContext(AuthContext);
@@ -50,7 +50,6 @@ const CustomerAuth = () => {
         if (!name || !email || !mobile || !password) {
           throw new Error('All fields are required');
         }
-        // Force register role based on portal context
         const assignedRole = isShopkeeperRoute ? 'shopkeeper' : 'customer';
         await register(name, email, mobile, password, assignedRole);
       } else {
@@ -59,7 +58,7 @@ const CustomerAuth = () => {
         }
         const loggedUser = await login(identifier, password);
         if (isShopkeeperRoute && loggedUser.role !== 'shopkeeper' && loggedUser.role !== 'admin') {
-          throw new Error('This account is registered as a customer. Please use a store owner account or visit the Customer portal.');
+          throw new Error('This account is registered as a customer. Please log in through the student store.');
         }
       }
     } catch (err) {
@@ -86,73 +85,76 @@ const CustomerAuth = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto my-12 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100">
-        {/* Banner */}
+    <div className="max-w-md mx-auto my-10 px-4">
+      <div className="bg-white p-7 sm:p-8 rounded-2xl shadow-card border border-slate-200/80">
+        {/* Brand header */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-extrabold text-gray-800 tracking-tight">
-            {isShopkeeperRoute ? 'Shopkeeper Portal' : 'NearKart Campus'}
+          <div className="inline-flex w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 items-center justify-center text-white shadow-xs shadow-emerald-500/20 mb-3">
+            <ShoppingCart size={22} className="stroke-[2.5]" />
+          </div>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            {isShopkeeperRoute ? 'Merchant Store Desk' : 'Welcome to NearKart'}
           </h2>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-slate-400 text-xs mt-1">
             {isRegister
-              ? `Create your ${isShopkeeperRoute ? 'shopkeeper' : 'customer'} account`
-              : `Sign in to access your ${isShopkeeperRoute ? 'store manager' : 'ordering'}`}
+              ? `Create your ${isShopkeeperRoute ? 'merchant' : 'campus'} account`
+              : `Sign in to access your ${isShopkeeperRoute ? 'store console' : 'college ordering'}`}
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm mb-4 border border-red-100">
+          <div className="bg-rose-50 text-rose-700 px-4 py-2.5 rounded-xl text-xs mb-4 border border-rose-200 font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {isRegister && (
             <>
               {/* Name */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Full Name</label>
+                <label className="block text-2xs font-bold text-slate-600 uppercase tracking-wider mb-1">Full Name</label>
                 <div className="relative">
-                  <User size={16} className="absolute left-3 top-3 text-gray-400" />
+                  <User size={15} className="absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
-                    placeholder="E.g. Aditya Prajapati"
+                    placeholder="Aditya Prajapati"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Email Address</label>
+                <label className="block text-2xs font-bold text-slate-600 uppercase tracking-wider mb-1">Email Address</label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-3 text-gray-400" />
+                  <Mail size={15} className="absolute left-3 top-3 text-slate-400" />
                   <input
                     type="email"
                     required
                     placeholder="name@college.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
                   />
                 </div>
               </div>
 
               {/* Mobile */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Mobile Phone Number</label>
+                <label className="block text-2xs font-bold text-slate-600 uppercase tracking-wider mb-1">Mobile Number</label>
                 <div className="relative">
-                  <Phone size={16} className="absolute left-3 top-3 text-gray-400" />
+                  <Phone size={15} className="absolute left-3 top-3 text-slate-400" />
                   <input
                     type="tel"
                     required
-                    placeholder="10 digit number"
+                    placeholder="10-digit number"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
                   />
                 </div>
               </div>
@@ -160,18 +162,17 @@ const CustomerAuth = () => {
           )}
 
           {!isRegister && (
-            /* Identifier (Email/Mobile) */
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Email or Mobile Number</label>
+              <label className="block text-2xs font-bold text-slate-600 uppercase tracking-wider mb-1">Email or Mobile</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-3 text-gray-400" />
+                <Mail size={15} className="absolute left-3 top-3 text-slate-400" />
                 <input
                   type="text"
                   required
-                  placeholder="customer@nearkart.com or 9876543210"
+                  placeholder="student@college.edu or 9876543210"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
                 />
               </div>
             </div>
@@ -179,16 +180,16 @@ const CustomerAuth = () => {
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Password</label>
+            <label className="block text-2xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
             <div className="relative">
-              <Lock size={16} className="absolute left-3 top-3 text-gray-400" />
+              <Lock size={15} className="absolute left-3 top-3 text-slate-400" />
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 transition"
               />
             </div>
           </div>
@@ -197,32 +198,33 @@ const CustomerAuth = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2.5 rounded-lg text-white font-semibold transition text-sm ${
+            className={`w-full py-2.5 rounded-xl text-white font-bold transition text-xs shadow-xs active:scale-98 flex items-center justify-center gap-1.5 ${
               isShopkeeperRoute
-                ? 'bg-gray-800 hover:bg-gray-900'
-                : 'bg-green-600 hover:bg-green-700'
+                ? 'bg-slate-900 hover:bg-slate-800'
+                : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
             } ${loading ? 'opacity-70 cursor-wait' : ''}`}
           >
-            {loading ? 'Processing...' : isRegister ? 'Create Account' : 'Sign In'}
+            <span>{loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}</span>
+            <ArrowRight size={14} />
           </button>
         </form>
 
         {/* Toggle Links */}
-        <div className="mt-6 text-center text-xs text-gray-500 space-y-2">
+        <div className="mt-5 text-center text-xs text-slate-500">
           {!isShopkeeperRoute ? (
             <div>
               {isRegister ? (
                 <p>
-                  Already have a student account?{' '}
-                  <Link to="/login" className="text-green-600 font-semibold hover:underline">
-                    Login here
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-emerald-700 font-bold hover:underline">
+                    Sign in here
                   </Link>
                 </p>
               ) : (
                 <p>
-                  New customer?{' '}
-                  <Link to="/register" className="text-green-600 font-semibold hover:underline">
-                    Register here
+                  New to NearKart?{' '}
+                  <Link to="/register" className="text-emerald-700 font-bold hover:underline">
+                    Create student account
                   </Link>
                 </p>
               )}
@@ -231,16 +233,16 @@ const CustomerAuth = () => {
             <div>
               {isRegister ? (
                 <p>
-                  Already have a shopkeeper account?{' '}
-                  <Link to="/shopkeeper/login" className="text-gray-700 font-semibold hover:underline">
+                  Already registered?{' '}
+                  <Link to="/shopkeeper/login" className="text-slate-800 font-bold hover:underline">
                     Login here
                   </Link>
                 </p>
               ) : (
                 <p>
-                  Want to register a store? Store owner accounts are created via Admin Panel or{' '}
-                  <Link to="/shopkeeper/login" className="text-gray-700 font-semibold hover:underline">
-                    sign up here
+                  Store manager desk.{' '}
+                  <Link to="/shopkeeper/login" className="text-slate-800 font-bold hover:underline">
+                    Sign in above
                   </Link>
                 </p>
               )}
@@ -248,44 +250,41 @@ const CustomerAuth = () => {
           )}
         </div>
 
-        {/* Development Helper Box */}
-        <div className="mt-8 pt-6 border-t border-gray-100">
-          <div className="bg-amber-50 rounded-lg p-4 text-amber-800 border border-amber-100">
-            <div className="flex gap-2 items-start mb-2.5">
-              <Info size={16} className="mt-0.5 shrink-0" />
-              <p className="text-xs font-bold uppercase tracking-wide">Developer Testing Helper</p>
+        {/* Quick Demo Credentials Box */}
+        <div className="mt-6 pt-5 border-t border-slate-100">
+          <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80">
+            <div className="flex gap-2 items-center mb-2">
+              <Info size={14} className="text-emerald-600 shrink-0" />
+              <p className="text-2xs font-extrabold uppercase tracking-wide text-slate-700">Quick Test Autofill</p>
             </div>
-            <p className="text-xs text-amber-700 mb-3">
-              NearKart seeds default testing accounts into the memory database. Click to autofill credentials:
-            </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => loadPreset('customer')}
-                className="bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 px-2 py-1.5 rounded text-xxs font-semibold shadow-xs"
+                className="bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-slate-700 px-2 py-1.5 rounded-lg text-3xs font-bold transition shadow-xs"
               >
-                Autofill Customer
+                👤 Customer
               </button>
               <button
                 type="button"
                 onClick={() => loadPreset('shopkeeper')}
-                className="bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 px-2 py-1.5 rounded text-xxs font-semibold shadow-xs"
+                className="bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-slate-700 px-2 py-1.5 rounded-lg text-3xs font-bold transition shadow-xs"
               >
-                Autofill Shop
+                🏪 Shopkeeper
               </button>
               <button
                 type="button"
                 onClick={() => loadPreset('delivery')}
-                className="bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 px-2 py-1.5 rounded text-xxs font-semibold shadow-xs"
+                className="bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-slate-700 px-2 py-1.5 rounded-lg text-3xs font-bold transition shadow-xs"
               >
-                Autofill Rider
+                🛵 Rider
               </button>
               <button
                 type="button"
                 onClick={() => loadPreset('admin')}
-                className="bg-white border border-amber-200 hover:bg-amber-100 text-amber-800 px-2 py-1.5 rounded text-xxs font-semibold shadow-xs"
+                className="bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-slate-700 px-2 py-1.5 rounded-lg text-3xs font-bold transition shadow-xs"
               >
-                Autofill Admin
+                🛡️ Admin
               </button>
             </div>
           </div>

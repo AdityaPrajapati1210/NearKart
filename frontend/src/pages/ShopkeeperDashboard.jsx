@@ -550,42 +550,116 @@ const ShopkeeperDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar Panel */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col justify-between shrink-0">
-        <div className="p-6 space-y-8">
-          <div className="flex items-center gap-2">
-            <Store className="text-green-500" size={24} />
-            <span className="text-xl font-black tracking-tight text-white">NearKart Desk</span>
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      {/* Mobile Merchant Top Header & Navigation Bar (md:hidden) */}
+      <header className="md:hidden bg-slate-900 text-white p-3.5 border-b border-slate-800 sticky top-0 z-40 shadow-sm">
+        <div className="flex justify-between items-center mb-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shrink-0 font-bold">
+              <Store size={16} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xs font-extrabold text-white truncate">{store?.name || 'NearKart Desk'}</h2>
+              <div className="flex items-center gap-1.5 text-3xs text-slate-400">
+                <span className={`w-1.5 h-1.5 rounded-full ${store?.status === 'open' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                <span className="capitalize">{store?.status || 'Active'}</span>
+                <span>•</span>
+                <span>{user.name}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleToggleAcceptingOrders}
+              className={`px-2 py-1 rounded-lg text-3xs font-extrabold uppercase transition ${
+                store?.acceptingOrders ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+              }`}
+            >
+              {store?.acceptingOrders ? 'Store: ON' : 'Store: OFF'}
+            </button>
+
+            <button
+              onClick={() => { logout(); navigate('/shopkeeper/login'); }}
+              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg"
+              title="Logout"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile 4-Tab Quick Selector */}
+        <div className="grid grid-cols-4 gap-1 bg-slate-800/90 p-1 rounded-xl text-3xs font-bold text-center">
+          <button
+            onClick={() => setCurrentTab('orders')}
+            className={`py-1.5 rounded-lg transition ${
+              currentTab === 'orders' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Orders ({orders.filter(o => !['DELIVERED','CANCELLED','REJECTED'].includes(o.orderStatus)).length})
+          </button>
+          <button
+            onClick={() => setCurrentTab('analytics')}
+            className={`py-1.5 rounded-lg transition ${
+              currentTab === 'analytics' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Stats
+          </button>
+          <Link
+            to="/shopkeeper/products"
+            className="py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1"
+          >
+            <span>Items</span>
+          </Link>
+          <Link
+            to="/shopkeeper/config"
+            className="py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1"
+          >
+            <span>Config</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Desktop Sidebar Panel (hidden on mobile) */}
+      <aside className="hidden md:flex md:w-64 bg-slate-900 text-white flex-col justify-between shrink-0">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+              <Store size={18} />
+            </div>
+            <span className="text-base font-extrabold tracking-tight text-white">NearKart Desk</span>
           </div>
 
           {store && (
-            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-800 space-y-3 font-semibold">
+            <div className="bg-slate-800/60 rounded-xl p-3.5 border border-slate-700/60 space-y-2.5 font-medium">
               <div>
-                <p className="text-xxs text-gray-400 uppercase tracking-widest font-bold">Logged Store</p>
-                <h3 className="font-extrabold text-white text-sm mt-1">{store.name}</h3>
-                <p className="text-3xs text-gray-500 line-clamp-1 mt-0.5">{store.location.address}</p>
+                <p className="text-3xs text-slate-400 uppercase tracking-widest font-extrabold">Logged Store</p>
+                <h3 className="font-extrabold text-white text-xs mt-0.5">{store.name}</h3>
+                <p className="text-3xs text-slate-400 line-clamp-1 mt-0.5">{store.location.address}</p>
               </div>
 
               {/* Status Indicator */}
-              <div className="flex justify-between items-center border-t border-gray-700/50 pt-2.5">
+              <div className="flex justify-between items-center border-t border-slate-700/60 pt-2 text-2xs">
                 <div className="flex gap-1.5 items-center">
                   <span className={`w-2 h-2 rounded-full ${
-                    store.status === 'open' ? 'bg-green-500 animate-pulse' : store.status === 'busy' ? 'bg-amber-500' : 'bg-red-500'
+                    store.status === 'open' ? 'bg-emerald-500 animate-pulse' : store.status === 'busy' ? 'bg-amber-500' : 'bg-rose-500'
                   }`} />
-                  <span className="text-2xs uppercase font-extrabold tracking-wide text-gray-300">{store.status}</span>
+                  <span className="uppercase font-extrabold tracking-wide text-slate-300">{store.status}</span>
                 </div>
-                <span className="text-3xs text-gray-400">{store.estimatedDeliveryTime}</span>
+                <span className="text-3xs text-slate-400">{store.estimatedDeliveryTime}</span>
               </div>
 
               {/* Order Toggles ON/OFF (Close Shop Button) */}
-              <div className="border-t border-gray-700/50 pt-2.5 flex justify-between items-center text-3xs">
-                <span className="text-gray-400 font-bold uppercase">Accept Orders</span>
+              <div className="border-t border-slate-700/60 pt-2 flex justify-between items-center text-3xs">
+                <span className="text-slate-400 font-bold uppercase">Accept Orders</span>
                 <button
                   type="button"
                   onClick={handleToggleAcceptingOrders}
                   className={`px-2 py-0.5 rounded font-extrabold uppercase transition ${
-                    store.acceptingOrders ? 'bg-green-600 text-white' : 'bg-red-650 text-white'
+                    store.acceptingOrders ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
                   }`}
                 >
                   {store.acceptingOrders ? 'ON' : 'OFF'}
@@ -594,69 +668,69 @@ const ShopkeeperDashboard = () => {
             </div>
           )}
 
-          <nav className="flex flex-col gap-2.5">
+          <nav className="flex flex-col gap-1.5">
             <button
               onClick={() => setCurrentTab('orders')}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition ${
-                currentTab === 'orders' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+                currentTab === 'orders' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <ListOrdered size={18} />
+              <ListOrdered size={16} />
               <span>Order Desk</span>
             </button>
 
             <button
               onClick={() => setCurrentTab('analytics')}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition ${
-                currentTab === 'analytics' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+                currentTab === 'analytics' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <TrendingUp size={18} />
+              <TrendingUp size={16} />
               <span>Business Overview</span>
             </button>
 
             <Link
               to="/shopkeeper/products"
-              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white transition"
+              className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition"
             >
-              <ShoppingBag size={18} />
+              <ShoppingBag size={16} />
               <span>Product Inventory</span>
             </Link>
 
             <Link
               to="/shopkeeper/config"
-              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white transition"
+              className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition"
             >
-              <Sliders size={18} />
+              <Sliders size={16} />
               <span>Store Configuration</span>
             </Link>
           </nav>
         </div>
 
-        <div className="p-6 border-t border-gray-800 flex justify-between items-center text-xs text-gray-400">
-          <div className="flex flex-col font-semibold">
-            <span className="font-semibold text-white truncate max-w-32">{user.name}</span>
-            <span className="text-3xs text-gray-500 capitalize">{user.role}</span>
+        <div className="p-6 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+          <div className="flex flex-col font-medium">
+            <span className="font-bold text-white truncate max-w-32">{user.name}</span>
+            <span className="text-3xs text-emerald-400 capitalize">{user.role}</span>
           </div>
           <button
             onClick={() => { logout(); navigate('/shopkeeper/login'); }}
-            className="text-gray-400 hover:text-red-400 p-2"
+            className="text-slate-400 hover:text-rose-400 p-2 transition"
             title="Log Out Desk"
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
           </button>
         </div>
       </aside>
 
       {/* Main panel workspace */}
-      <main className="flex-grow p-8 overflow-y-auto max-h-screen">
+      <main className="flex-grow p-3 sm:p-6 md:p-8 overflow-y-auto max-h-screen">
         {/* Low Stock Alerts banner */}
         {analytics && analytics.lowStockAlerts && analytics.lowStockAlerts.length > 0 && (
           <div className="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 mb-6 flex gap-3.5 items-start font-semibold">
             <AlertOctagon className="text-red-600 shrink-0 mt-0.5 animate-pulse" size={20} />
             <div className="space-y-1">
               <p className="text-xs font-bold uppercase tracking-wider text-red-700">Inventory Alert: Low Stock Warning</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-2xs text-red-650 leading-relaxed font-semibold">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-2xs text-rose-600 leading-relaxed font-semibold">
                 {analytics.lowStockAlerts.map((item, idx) => (
                   <span key={idx}>⚠️ {item.name}: {item.stock === 0 ? <span className="font-extrabold underline text-red-800">OUT OF STOCK</span> : `Only ${item.stock} left`}</span>
                 ))}
@@ -809,7 +883,7 @@ const ShopkeeperDashboard = () => {
                               <span className="text-3xs font-extrabold bg-green-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Ready</span>
                             </div>
                           ) : (
-                            <div className="bg-amber-50 text-amber-800 border border-amber-250 p-2.5 rounded-lg flex flex-col gap-2">
+                            <div className="bg-amber-50 text-amber-800 border border-amber-200 p-2.5 rounded-lg flex flex-col gap-2">
                               <div className="flex justify-between items-center text-3xs font-extrabold text-amber-900 uppercase">
                                 <span>⚠️ No Rider Assigned Yet</span>
                                 <span className="text-red-500 animate-pulse">Needs Rider</span>
@@ -818,7 +892,7 @@ const ShopkeeperDashboard = () => {
                                 <select
                                   onChange={(e) => handleAssignRider(order._id, e.target.value)}
                                   defaultValue=""
-                                  className="flex-grow border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-gray-705 focus:outline-none"
+                                  className="flex-grow border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-gray-700 focus:outline-none"
                                 >
                                   <option value="" disabled>-- Select Delivery Boy --</option>
                                   {riders.map(r => (
@@ -843,7 +917,7 @@ const ShopkeeperDashboard = () => {
                         </div>
 
                         {order.cancellationReason && (
-                          <div className="bg-red-50 p-2.5 rounded-lg border border-red-100 text-3xs text-red-650 font-semibold leading-normal">
+                          <div className="bg-red-50 p-2.5 rounded-lg border border-red-100 text-3xs text-rose-600 font-semibold leading-normal">
                             ❌ Cancellation reason: "{order.cancellationReason}"
                           </div>
                         )}
@@ -872,7 +946,7 @@ const ShopkeeperDashboard = () => {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdateOrderStatus(order._id, 'CANCELLED')}
-                              className="border border-red-200 bg-white text-red-650 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
+                              className="border border-red-200 bg-white text-rose-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
                             >
                               Cancel
                             </button>
@@ -890,7 +964,7 @@ const ShopkeeperDashboard = () => {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdateOrderStatus(order._id, 'CANCELLED')}
-                              className="border border-red-200 bg-white text-red-655 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
+                              className="border border-red-200 bg-white text-rose-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
                             >
                               Cancel
                             </button>
@@ -939,7 +1013,7 @@ const ShopkeeperDashboard = () => {
                               </button>
                             </div>
                             {otpErrors[order._id] && (
-                              <p className="text-3xs text-red-650 font-semibold">{otpErrors[order._id]}</p>
+                              <p className="text-3xs text-rose-600 font-semibold">{otpErrors[order._id]}</p>
                             )}
                             <p className="text-4xs text-gray-400 leading-normal font-semibold">
                               💡 Check the backend node terminal logs for simulated SMS OTP code (e.g. OTP: [5712]).
@@ -969,58 +1043,58 @@ const ShopkeeperDashboard = () => {
 
             {analytics ? (
               <div className="space-y-8">
-                {/* Stats cards grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Stats cards grid (2 cols on mobile, 4 cols on desktop) */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                   {/* Today's revenue */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-xs flex items-center gap-4 font-semibold text-gray-600">
-                    <div className="bg-green-50 p-3 rounded-lg text-green-600">
-                      <DollarSign size={22} />
+                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 font-semibold text-slate-700">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <DollarSign size={20} />
                     </div>
-                    <div>
-                      <p className="text-xxs font-bold text-gray-400 uppercase tracking-wider">Today's Sales</p>
-                      <h3 className="text-xl font-black text-gray-800 mt-1">₹{analytics.todaySales}</h3>
-                      <p className="text-4xs text-gray-400 font-semibold mt-0.5">{analytics.todayOrders} Orders today</p>
+                    <div className="min-w-0">
+                      <p className="text-3xs font-extrabold text-slate-400 uppercase tracking-wider truncate">Today's Sales</p>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">₹{analytics.todaySales}</h3>
+                      <p className="text-3xs text-slate-400 font-medium truncate">{analytics.todayOrders} orders</p>
                     </div>
                   </div>
 
                   {/* Gross revenue */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-xs flex items-center gap-4 font-semibold text-gray-600">
-                    <div className="bg-emerald-50 p-3 rounded-lg text-emerald-600">
-                      <TrendingUp size={22} />
+                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 font-semibold text-slate-700">
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                      <TrendingUp size={20} />
                     </div>
-                    <div>
-                      <p className="text-xxs font-bold text-gray-400 uppercase tracking-wider">Gross Sales</p>
-                      <h3 className="text-xl font-black text-gray-800 mt-1">₹{analytics.totalSales}</h3>
-                      <p className="text-4xs text-gray-400 font-semibold mt-0.5">Lifetime total</p>
+                    <div className="min-w-0">
+                      <p className="text-3xs font-extrabold text-slate-400 uppercase tracking-wider truncate">Gross Sales</p>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">₹{analytics.totalSales}</h3>
+                      <p className="text-3xs text-slate-400 font-medium truncate">Lifetime total</p>
                     </div>
                   </div>
 
                   {/* Completed orders */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-xs flex items-center gap-4 font-semibold text-gray-600">
-                    <div className="bg-blue-50 p-3 rounded-lg text-blue-600">
-                      <PackageCheck size={22} />
+                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 font-semibold text-slate-700">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <PackageCheck size={20} />
                     </div>
-                    <div>
-                      <p className="text-xxs font-bold text-gray-400 uppercase tracking-wider">Delivered Orders</p>
-                      <h3 className="text-xl font-black text-gray-800 mt-1">{analytics.completedOrders}</h3>
-                      <p className="text-4xs text-gray-400 font-semibold mt-0.5">Pending: {analytics.pendingOrders}</p>
+                    <div className="min-w-0">
+                      <p className="text-3xs font-extrabold text-slate-400 uppercase tracking-wider truncate">Delivered</p>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">{analytics.completedOrders}</h3>
+                      <p className="text-3xs text-slate-400 font-medium truncate">Pending: {analytics.pendingOrders}</p>
                     </div>
                   </div>
 
                   {/* Cancellations counter */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-xs flex items-center gap-4 font-semibold text-gray-600">
-                    <div className="bg-red-50 p-3 rounded-lg text-red-655">
-                      <AlertTriangle size={22} />
+                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 font-semibold text-slate-700">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                      <AlertTriangle size={20} />
                     </div>
-                    <div>
-                      <p className="text-xxs font-bold text-gray-400 uppercase tracking-wider">Cancellations</p>
-                      <h3 className="text-xl font-black text-red-655 mt-1">{analytics.cancelledOrders}</h3>
-                      <p className="text-4xs text-gray-400 font-semibold mt-0.5">Cancellations / Rejections</p>
+                    <div className="min-w-0">
+                      <p className="text-3xs font-extrabold text-slate-400 uppercase tracking-wider truncate">Cancelled</p>
+                      <h3 className="text-base sm:text-lg font-black text-rose-600 mt-0.5">{analytics.cancelledOrders}</h3>
+                      <p className="text-3xs text-slate-400 font-medium truncate">Rejections</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs font-semibold text-gray-650">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs font-semibold text-slate-600">
                   {/* College-wise Analytics */}
                   <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-xs space-y-4">
                     <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
@@ -1157,14 +1231,14 @@ const ShopkeeperDashboard = () => {
                   <button
                     type="button"
                     onClick={() => setShowCancelModal(false)}
-                    className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-55 py-2 rounded-lg text-xs font-bold transition"
+                    className="flex-1 border border-gray-200 text-gray-600 hover:bg-slate-100 py-2 rounded-lg text-xs font-bold transition"
                   >
                     Close
                   </button>
                   <button
                     type="submit"
                     disabled={cancelLoading}
-                    className="flex-grow bg-red-655 hover:bg-red-750 text-white py-2 rounded-lg text-xs font-bold transition shadow-sm"
+                    className="flex-grow bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-lg text-xs font-bold transition shadow-sm"
                   >
                     {cancelLoading ? 'Saving...' : 'Confirm Action'}
                   </button>

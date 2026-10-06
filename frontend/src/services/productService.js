@@ -103,14 +103,21 @@ export const productService = {
     }
 
     // Normalize each product for frontend component consumption
-    let normalized = rawProducts.map((p) => ({
-      ...p,
-      _id: p._id,
-      id: p._id,
-      store: p.store || 'MAIN_STORE',
-      image: typeof p.image === 'string' ? p.image : p.image?.url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
-      isActive: p.stock > 0,
-    }));
+    let normalized = rawProducts.map((p) => {
+      const priceVal = Number(p.price) || 0;
+      const rawOffer = p.offerPrice !== undefined && p.offerPrice !== null ? Number(p.offerPrice) : priceVal;
+      const offerVal = rawOffer > 0 && rawOffer <= priceVal ? rawOffer : priceVal;
+      return {
+        ...p,
+        _id: p._id,
+        id: p._id,
+        price: priceVal,
+        offerPrice: offerVal,
+        store: p.store || 'MAIN_STORE',
+        image: typeof p.image === 'string' ? p.image : p.image?.url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
+        isActive: p.isAvailable !== undefined ? Boolean(p.isAvailable) : (p.isActive !== undefined ? Boolean(p.isActive) : p.stock > 0),
+      };
+    });
 
     // In-memory category and search filtering for frontend seamless UX
     if (params.category && params.category !== 'All') {

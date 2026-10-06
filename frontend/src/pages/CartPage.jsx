@@ -314,7 +314,8 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
     }
   };
 
-  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const getItemPrice = (item) => (item.offerPrice && item.offerPrice > 0 && item.offerPrice < item.price ? item.offerPrice : item.price);
+  const subtotal = cart.reduce((total, item) => total + getItemPrice(item) * item.quantity, 0);
 
   const storeDeliveryFee = storeDetails ? storeDetails.deliveryFee : 10;
   const storeMinimumOrder = storeDetails ? storeDetails.minimumOrder : 50;
@@ -451,7 +452,12 @@ const CartPage = ({ cart, updateQuantity, removeFromCart, clearCart }) => {
                         )}
                       </div>
                       <p className="text-3xs text-slate-400 capitalize">{item.category}</p>
-                      <p className="text-xs sm:text-sm font-extrabold text-emerald-700 mt-0.5">₹{item.price}</p>
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        <span className="text-xs sm:text-sm font-extrabold text-emerald-700">₹{getItemPrice(item)}</span>
+                        {item.offerPrice && item.offerPrice > 0 && item.offerPrice < item.price && (
+                          <span className="text-3xs text-slate-400 line-through">₹{item.price}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

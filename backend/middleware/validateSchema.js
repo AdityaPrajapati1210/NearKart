@@ -243,16 +243,24 @@ const validateProduct = (req, res, next) => {
         description: Joi.string()
             .trim()
             .max(500)
-            .allow("", null),
+            .allow("", null)
+            .optional(),
 
         price: Joi.number()
             .min(0)
             .required(),
 
         offerPrice: Joi.number()
+            .empty('')
             .min(0)
             .max(Joi.ref("price"))
-            .optional(),
+            .allow(null)
+            .optional()
+            .messages({
+                "number.max": "Offer price cannot be greater than regular price",
+                "number.min": "Offer price must be greater than or equal to 0",
+                "number.base": "Offer price must be a valid number"
+            }),
 
         category: Joi.string()
             .trim()
@@ -260,7 +268,8 @@ const validateProduct = (req, res, next) => {
 
         image: Joi.string()
             .trim()
-            .allow("", null),
+            .allow("", null)
+            .optional(),
 
         stock: Joi.number()
             .integer()
@@ -270,17 +279,22 @@ const validateProduct = (req, res, next) => {
         isAvailable: Joi.boolean()
             .optional(),
 
+        isActive: Joi.boolean()
+            .optional(),
+
         salesCount: Joi.number()
             .integer()
             .min(0)
             .optional()
     });
 
-    const { error } = productSchema.validate(req.body);
+    const { error, value } = productSchema.validate(req.body);
 
     if (error) {
         throw new ExpressError(400, error.details[0].message);
     }
+
+    req.body = value;
 
     next();
 };

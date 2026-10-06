@@ -34,9 +34,14 @@ require("./config/redis");
 // ======================================================
 // >>>>>>> 51a1824 (socket and redis setup)
 
+const path = require("path");
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static uploads folder
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 
 const sessionMiddleware = session({

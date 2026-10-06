@@ -424,9 +424,11 @@ const CustomerHome = ({ addToCart, cart = [] }) => {
                       {/* Price and Add button */}
                       <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 gap-1">
                         <div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-xs sm:text-base font-extrabold text-slate-900">₹{product.price}</span>
-                            {product.offerPrice && product.offerPrice < product.price && (
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-xs sm:text-base font-extrabold text-slate-900">
+                              ₹{product.offerPrice && product.offerPrice > 0 && product.offerPrice < product.price ? product.offerPrice : product.price}
+                            </span>
+                            {product.offerPrice && product.offerPrice > 0 && product.offerPrice < product.price && (
                               <span className="text-3xs text-slate-400 line-through">₹{product.price}</span>
                             )}
                           </div>
